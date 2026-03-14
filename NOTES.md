@@ -1,7 +1,9 @@
 
 
 
-# RIA Advisor Copilot — Session Notes
+# ARIA — Advisor Relationship Intelligence Assistant — Session Notes
+
+> *"Know before they call. Relationships, backed by intelligence."*
 
 ## Current State
 **Phase:** 1 — Demo Core ✅ COMPLETE

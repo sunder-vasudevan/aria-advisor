@@ -70,8 +70,8 @@ export default function ClientList() {
       {/* Sidebar */}
       <div className="w-64 bg-navy-950 flex flex-col flex-shrink-0">
         <div className="p-6 border-b border-navy-800">
-          <div className="text-white font-bold text-lg tracking-tight">RIA Advisor</div>
-          <div className="text-navy-300 text-xs mt-0.5">Copilot Workbench</div>
+          <div className="text-white font-bold text-lg tracking-tight">ARIA</div>
+          <div className="text-navy-300 text-xs mt-0.5">Advisor Relationship Intelligence Assistant</div>
         </div>
         <nav className="flex-1 p-4">
           <div className="text-navy-400 text-xs font-semibold uppercase tracking-wider mb-3">Navigation</div>

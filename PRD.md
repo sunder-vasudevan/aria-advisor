@@ -1,18 +1,20 @@
-# RIA Advisor Copilot — Product Requirements Document
+# ARIA — Advisor Relationship Intelligence Assistant
 
-**Version:** 1.0  
-**Date:** 2026-03-13  
-**Status:** Active  
+> *"Know before they call. Relationships, backed by intelligence."*
+
+**Version:** 1.0
+**Date:** 2026-03-13
+**Status:** Active
 **Owner:** Sunder Vasudevan
 
 ---
 
 ## 1. Product Vision
 
-Build a demo-ready, AI-powered Advisor Workbench for Relationship Managers (RMs) in Indian banking — not to replace the advisor, but to make them dramatically more effective.
+Build a demo-ready, AI-powered Advisor Workbench for Relationship Managers (RMs) in banking — not to replace the advisor, but to make them dramatically more effective.
 
 The pitch to a bank:
-> "We built the advisory intelligence layer your core banking system was never designed to have. Plug it in alongside Finacle/Temenos. Your RMs get an AI copilot. Your compliance team gets full audit trails. Your clients get explanations they actually understand."
+> "Your core banking system was built to process transactions, not to think. ARIA sits alongside it and gives every RM the intelligence to know their clients before they call."
 
 This is a middleware play — sits on top of CBS, not a replacement for it.
 

@@ -114,8 +114,8 @@ export default function Client360() {
             <ArrowLeft size={14} />
             Back to Client Book
           </button>
-          <div className="text-white font-bold text-lg tracking-tight">RIA Advisor</div>
-          <div className="text-navy-300 text-xs mt-0.5">Copilot Workbench</div>
+          <div className="text-white font-bold text-lg tracking-tight">ARIA</div>
+          <div className="text-navy-300 text-xs mt-0.5">Advisor Relationship Intelligence Assistant</div>
         </div>
 
         {/* Client profile in sidebar */}
