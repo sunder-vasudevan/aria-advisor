@@ -251,7 +251,7 @@ export default function Client360() {
           )}
 
           {activeTab === 'goals' && (
-            <GoalsPanel goals={client.goals} />
+            <GoalsPanel clientId={id} goals={client.goals} />
           )}
 
           {activeTab === 'events' && (

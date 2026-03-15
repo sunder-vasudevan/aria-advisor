@@ -12,6 +12,9 @@ export const getHoldings = (id) => api.get(`/clients/${id}/holdings`).then(r => 
 
 export const getGoals = (id) => api.get(`/clients/${id}/goals`).then(r => r.data)
 
+export const getGoalProjection = (id, params = {}) =>
+  api.get(`/clients/${id}/goal-projection`, { params }).then(r => r.data)
+
 export const getSituation = (id) => api.get(`/clients/${id}/situation`).then(r => r.data)
 
 export const sendCopilotMessage = (id, message, conversation_history = []) =>
