@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getClient } from '../api/client'
-import { ArrowLeft, AlertTriangle, Clock, CheckCircle, User, Shield, TrendingUp } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Clock, CheckCircle, User, CalendarCheck } from 'lucide-react'
 import PortfolioChart from '../components/PortfolioChart'
 import HoldingsTable from '../components/HoldingsTable'
 import GoalsPanel from '../components/GoalsPanel'
 import CopilotChat from '../components/CopilotChat'
 import SituationSummary from '../components/SituationSummary'
+import MeetingPrepPanel from '../components/MeetingPrepPanel'
 import { fmt } from '../api/client'
 
 function UrgencyBadge({ flag }) {
@@ -74,6 +75,7 @@ export default function Client360() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('portfolio')
+  const [showMeetingPrep, setShowMeetingPrep] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -200,6 +202,13 @@ export default function Client360() {
                 <span className="font-semibold text-gray-900">{fmt.inr(client.portfolio?.total_value)}</span>
               </div>
             </div>
+            <button
+              onClick={() => setShowMeetingPrep(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-navy-950 text-white text-sm font-medium rounded-lg hover:bg-navy-800 transition-colors"
+            >
+              <CalendarCheck size={14} />
+              Prep for Meeting
+            </button>
           </div>
         </div>
 
@@ -270,6 +279,15 @@ export default function Client360() {
       <div className="w-96 bg-white border-l border-gray-200 flex flex-col flex-shrink-0">
         <CopilotChat clientId={id} clientName={client.name} />
       </div>
+
+      {/* Meeting Prep slide-over */}
+      {showMeetingPrep && (
+        <MeetingPrepPanel
+          clientId={id}
+          clientName={client.name}
+          onClose={() => setShowMeetingPrep(false)}
+        />
+      )}
     </div>
   )
 }

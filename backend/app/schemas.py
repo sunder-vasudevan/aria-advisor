@@ -146,3 +146,18 @@ class BriefingResponse(BaseModel):
     headline: str  # e.g. "5 clients need attention today"
     clients: List[BriefingClientSummary]
     overall_narrative: str  # AI-generated morning brief
+
+
+# ─── Meeting Prep Card ────────────────────────────────────────────────────────
+
+class MeetingPrepCard(BaseModel):
+    client_name: str
+    segment: str
+    aum: str
+    risk_profile: str
+    urgency_flags: List[UrgencyFlag]
+    goal_status_summary: str
+    talking_points: List[str]
+    suggested_questions: List[str]
+    life_events_to_reference: List[str]
+    generated_at: str

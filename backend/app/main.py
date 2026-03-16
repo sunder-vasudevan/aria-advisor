@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from .database import engine, Base
-from .routers import clients, copilot, briefing, situation
+from .routers import clients, copilot, briefing, situation, meeting_prep
 
 load_dotenv()
 
@@ -37,6 +37,7 @@ app.include_router(clients.router)
 app.include_router(copilot.router)
 app.include_router(briefing.router)
 app.include_router(situation.router)
+app.include_router(meeting_prep.router)
 
 
 @app.get("/health")

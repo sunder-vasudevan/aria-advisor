@@ -23,6 +23,9 @@ export const sendCopilotMessage = (id, message, conversation_history = []) =>
 export const getBriefing = (rmId = 'rm_001') =>
   api.get(`/briefing/${rmId}`).then(r => r.data)
 
+export const getMeetingPrep = (id) =>
+  api.get(`/clients/${id}/meeting-prep`).then(r => r.data)
+
 export const fmt = {
   inr: (v) => {
     if (!v && v !== 0) return '—'

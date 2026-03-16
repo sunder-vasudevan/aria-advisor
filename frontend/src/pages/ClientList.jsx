@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, TrendingUp, ChevronRight, RefreshCw, Bell } from 'lucide-react'
 import { getClients, getBriefing, fmt } from '../api/client'
+import { getAdvisorSession, advisorLogout } from '../auth'
 
 function UrgencyBadge({ flag }) {
   const base = 'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium'
@@ -34,6 +35,7 @@ export default function ClientList() {
   const [briefingLoading, setBriefingLoading] = useState(false)
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
+  const session = getAdvisorSession()
 
   useEffect(() => {
     getClients()
@@ -82,8 +84,14 @@ export default function ClientList() {
         </nav>
         <div className="p-4 border-t border-navy-800">
           <div className="text-navy-400 text-xs">Logged in as</div>
-          <div className="text-white text-sm font-medium mt-0.5">Rahul Agarwal, RM</div>
+          <div className="text-white text-sm font-medium mt-0.5">{session?.username || 'rm_demo'}</div>
           <div className="text-navy-400 text-xs">Mumbai Branch</div>
+          <button
+            onClick={() => { advisorLogout(); navigate('/login') }}
+            className="text-navy-400 text-xs hover:text-white transition-colors mt-2"
+          >
+            Sign out
+          </button>
         </div>
       </div>
 
