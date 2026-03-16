@@ -23,6 +23,16 @@ def _fmt_aum(v: float) -> str:
 
 @router.get("/{client_id}/meeting-prep", response_model=MeetingPrepCard)
 def get_meeting_prep(client_id: int, db: Session = Depends(get_db)):
+    try:
+        return _get_meeting_prep_inner(client_id, db)
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        raise HTTPException(status_code=500, detail=f"Meeting prep error: {type(e).__name__}: {str(e)}\n{traceback.format_exc()}")
+
+
+def _get_meeting_prep_inner(client_id: int, db: Session):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
