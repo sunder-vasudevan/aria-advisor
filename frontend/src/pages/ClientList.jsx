@@ -129,12 +129,50 @@ export default function ClientList() {
 
           {/* Morning Briefing Card */}
           {briefing && (
-            <div className="mt-4 p-4 bg-navy-50 border border-navy-200 rounded-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <Bell size={14} className="text-navy-700" />
-                <span className="text-sm font-semibold text-navy-900">{briefing.headline}</span>
+            <div className="mt-4 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              {/* Briefing header */}
+              <div className="flex items-center gap-2 px-5 py-3 bg-navy-950 border-b border-navy-800">
+                <Bell size={13} className="text-navy-300" />
+                <span className="text-sm font-semibold text-white">{briefing.headline}</span>
+                <span className="ml-auto text-xs text-navy-400">{briefing.date}</span>
               </div>
-              <p className="text-sm text-navy-800 leading-relaxed">{briefing.overall_narrative}</p>
+
+              {/* Narrative */}
+              <div className="px-5 py-3 bg-navy-50 border-b border-gray-100">
+                <p className="text-sm text-navy-900 leading-relaxed">{briefing.overall_narrative}</p>
+              </div>
+
+              {/* Per-client rows */}
+              {briefing.clients && briefing.clients.length > 0 && (
+                <div className="divide-y divide-gray-100">
+                  {briefing.clients.map(c => (
+                    <div
+                      key={c.client_id}
+                      onClick={() => navigate(`/clients/${c.client_id}`)}
+                      className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                    >
+                      {/* Severity dot */}
+                      <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${
+                        c.urgency_flags.some(f => f.severity === 'high')
+                          ? 'bg-red-500'
+                          : 'bg-amber-400'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900">{c.name}</span>
+                          <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                            c.segment === 'HNI'
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>{c.segment}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5 leading-snug">{c.summary}</p>
+                      </div>
+                      <ChevronRight size={14} className="text-gray-300 flex-shrink-0 mt-1" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
