@@ -44,16 +44,24 @@
 
 ## Next Session Agenda ← START HERE NEXT SESSION
 
-### 1. Deploy backend to Render — verify FEAT-101 on production
-The Client model schema changed (7 new columns). Render auto-deploys from GitHub but the Supabase production DB needs the migration to run. On first backend startup after deploy, `_run_migrations()` in `main.py` will add the columns automatically. Verify:
-- `POST /clients` works on https://aria-advisor.onrender.com
-- `PUT /clients/{id}` works
-- New client appears in client list
+### 1. Verify FEAT-101 on production (Render + Supabase)
+Client model schema changed — 7 new columns. `_run_migrations()` in `main.py` auto-runs on startup.
+- Confirm `POST /clients` and `PUT /clients/{id}` work on https://aria-advisor.onrender.com
+- Confirm new client appears in client list after adding
 
-### 2. FEAT-503 — Live goal probability recalculation (next committed backlog item)
-- Trigger projection calls automatically as sliders move (debounced, no manual button)
-- Keep request load controlled (debounce + last-request-wins)
-- Update each goal card instantly with scenario probability and delta
+### 2. Complete client onboarding — FEAT-102, FEAT-108, FEAT-109 (full add-client flow)
+FEAT-101 is step 1 only (basic info). A newly added client has no portfolio, no holdings, no goals — making them invisible to AI features (briefing, copilot, goal projection).
+
+Full onboarding requires:
+- **FEAT-102** — Risk questionnaire (guided Q&A → auto-calculates risk score, replaces manual slider)
+- **FEAT-108** — Add portfolio + holdings (fund name, allocation %, value)
+- **FEAT-109** — Add goals (name, target amount, target date, monthly SIP → initial probability calculated)
+
+These 3 + FEAT-107 (multi-step wizard) = a complete "Add New Client" flow for the bank demo.
+
+### 3. FEAT-503 — Live goal probability recalculation
+- Trigger projection calls automatically as sliders move (debounced)
+- Update goal cards in real-time with scenario probability and delta
 
 ## What Shipped This Session (2026-03-17)
 - Full stack deployed to Render + Supabase + Vercel ✅
