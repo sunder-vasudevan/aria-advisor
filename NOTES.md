@@ -27,35 +27,30 @@
 - HELP.md — full feature guide and setup docs
 - PRD.md v1.1 — updated with WF benchmark, FEAT-308/309 added
 
-## What Shipped This Session (2026-03-18)
-- Full mobile-responsive layout across all pages ✅
-  - ClientList: mobile top nav + card-based client list
-  - Client360: mobile top bar, extra tabs (Client Info + AI Copilot), sidebars hidden on mobile
-  - MeetingPrepPanel: full-width on mobile
-  - ClientPortal: tighter padding on small screens
-- Mobile-first saved as universal standing rule (all future projects) ✅
-- Git pushed → Vercel auto-deployed ✅
+## What Shipped This Session (2026-03-17 — Session 7)
+- **FEAT-101: Add + Edit Client module** ✅
+  - 7 new fields on Client model: phone, email, date_of_birth, address, city, pincode, pan_number
+  - `POST /clients` — create new client
+  - `PUT /clients/{id}` — update any field (risk_category auto-derived)
+  - Startup migration — adds columns to existing DB without data loss
+  - `ClientForm.jsx` — single reusable form for add and edit
+  - DOB auto-calculates age; risk score slider auto-shows category label
+  - "Add Client" button in ClientList header
+  - "Edit" button in Client360 sidebar
+  - Routes: `/clients/new` and `/clients/:id/edit`
+- Commit: `01d1af3` → pushed to GitHub, Vercel auto-deploying
 
 ---
 
 ## Next Session Agenda ← START HERE NEXT SESSION
 
-### 1. Discuss — Client Interaction Capture (new feature area)
-Sunder wants a better way to capture client interactions. Ideas to discuss and prioritize:
+### 1. Deploy backend to Render — verify FEAT-101 on production
+The Client model schema changed (7 new columns). Render auto-deploys from GitHub but the Supabase production DB needs the migration to run. On first backend startup after deploy, `_run_migrations()` in `main.py` will add the columns automatically. Verify:
+- `POST /clients` works on https://aria-advisor.onrender.com
+- `PUT /clients/{id}` works
+- New client appears in client list
 
-- **Quick Call Log** — one-tap after a call: mood, topics, duration (30 sec to log)
-- **AI Meeting Notes** — type raw notes → AI structures into summary + action items
-- **Interaction Timeline** — per-client visual history of all touchpoints
-- **Follow-up Queue** — daily task list generated from interactions
-- **Client Sentiment Score** — mood trend over time (green/amber/red churn risk)
-- **Next Best Action** — AI suggests follow-up after each logged interaction
-- **WhatsApp-style Quick Note** — floating button on client page → instant timestamped note
-- **Voice Memo** — 60s voice note, AI transcribes + extracts action items
-
-Decide: which 1-2 to build first? Recommend starting with **Quick Call Log + Interaction Timeline** as the foundation — everything else builds on top.
-
-### 2. Build — FEAT-503 (if interaction capture gets deprioritized)
-**FEAT-503** — Live goal probability recalculation
+### 2. FEAT-503 — Live goal probability recalculation (next committed backlog item)
 - Trigger projection calls automatically as sliders move (debounced, no manual button)
 - Keep request load controlled (debounce + last-request-wins)
 - Update each goal card instantly with scenario probability and delta
@@ -69,5 +64,5 @@ Decide: which 1-2 to build first? Recommend starting with **Quick Call Log + Int
 - Anthropic API credits added — Morning Briefing + Meeting Prep confirmed working ✅
 
 ## Open Flags
-- None — all AI features live and working
-- Next: FEAT-503 (goal probability sliders) → FEAT-301 (book-level copilot)
+- Supabase production DB needs FEAT-101 migration confirmed on first Render deploy
+- Next committed: FEAT-503 (goal probability sliders) → FEAT-301 (book-level copilot)

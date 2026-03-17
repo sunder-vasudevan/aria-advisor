@@ -96,7 +96,7 @@ This scenario must work end-to-end for every demo:
 | Portfolio and holdings data model | ✅ | — | Full model + seed data |
 | Goals data model (target, SIP, probability) | ✅ | — | Full model + seed data |
 | Life events tracking | ✅ | — | job_change, new_child, marriage, etc. |
-| Edit / update client data (API + UI) | ⬜ | FEAT-101 | Currently read-only |
+| Add new client + edit client data (API + UI) | ✅ | FEAT-101 | POST /clients + PUT /clients/{id} + ClientForm page. Fields: name, DOB, phone, email, address, city, pincode, PAN, segment, risk score |
 | Risk questionnaire (onboarding flow) | ⬜ | FEAT-102 | UI form → score calculation |
 | Financial profile (income, net worth, tax status) | ⬜ | FEAT-103 | Extend Client model |
 | ESG preference capture | ⬜ | FEAT-104 | Add to Client model + filter logic |
@@ -257,7 +257,7 @@ Priority order:
 | FEAT-306 | Next-best-action engine | Daily priority per client | Merrill has 23M interactions; WF has nothing |
 | FEAT-201 | Live NAV fetch (MFAPI.in) | Makes data feel real | Free API, no auth |
 | FEAT-202 | Rebalancing proposal engine | Closes recommendation loop | — |
-| FEAT-101 | Edit client data | Currently read-only | — |
+| FEAT-101 | Add + edit client data | ✅ Complete | Full form — identity, contact, advisory profile |
 
 #### Phase 2 Milestone — Production Deploy ✅ COMPLETE (2026-03-16)
 
