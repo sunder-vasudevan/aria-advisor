@@ -97,9 +97,9 @@ This scenario must work end-to-end for every demo:
 | Goals data model (target, SIP, probability) | ✅ | — | Full model + seed data |
 | Life events tracking | ✅ | — | job_change, new_child, marriage, etc. |
 | Add new client + edit basic info (API + UI) | ✅ | FEAT-101 | Step 1 of onboarding — name, DOB, phone, email, address, city, pincode, PAN, segment, risk score slider |
-| Risk questionnaire (onboarding step 2) | ⬜ | FEAT-102 | Guided Q&A → auto-calculates risk score + category. Replaces manual slider with a proper assessment |
-| Add initial portfolio + holdings (onboarding step 3) | ⬜ | FEAT-108 | Form to enter fund holdings, allocation %. Creates Portfolio + Holding records for new client |
-| Add initial goals (onboarding step 4) | ⬜ | FEAT-109 | Form to add 1+ goals — name, target amount, target date, monthly SIP. Calculates initial probability |
+| Risk questionnaire (onboarding step 2) | ✅ | FEAT-102 | 5-question guided Q&A → auto-calculates risk_score (1-10) and category. Replaces manual slider |
+| Add initial portfolio + holdings (onboarding step 3) | ✅ | FEAT-108 | POST /clients/{id}/portfolio. Fund holdings, allocation %. Auto-calculates total_value and current_pct |
+| Add initial goals (onboarding step 4) | ✅ | FEAT-109 | POST /clients/{id}/goals. Goal name, target amount, date, SIP → Monte Carlo probability on save |
 | Multi-step onboarding flow | ⬜ | FEAT-107 | Ties FEAT-101 → 102 → 108 → 109 into a single guided wizard. Step indicator, save-and-continue |
 | Financial profile (income, net worth, tax status) | ⬜ | FEAT-103 | Extend Client model — relevant for HNI segment |
 | ESG preference capture | ⬜ | FEAT-104 | Add to Client model + filter logic |
@@ -253,9 +253,9 @@ Priority order:
 | FEAT-501 | Monte Carlo simulation backend | ✅ Complete | WF has Envision (static) |
 | FEAT-502 | What-if sliders UI | ✅ Complete | WF has 4 manual scenarios |
 | FEAT-101 | Add + edit basic client info | ✅ Complete | Identity, contact, advisory profile |
-| FEAT-102 | Risk questionnaire | Onboarding step 2 — proper risk assessment, not just a slider | — |
-| FEAT-108 | Add portfolio + holdings | Onboarding step 3 — new clients need real data, not just a profile | — |
-| FEAT-109 | Add goals | Onboarding step 4 — goal probability only works if goals exist | — |
+| FEAT-102 | Risk questionnaire | ✅ Complete | 5-question Q&A → auto-scores risk profile |
+| FEAT-108 | Add portfolio + holdings | ✅ Complete | Full portfolio creation with fund-level data |
+| FEAT-109 | Add goals | ✅ Complete | Goals with Monte Carlo probability on save |
 | FEAT-503 | Live goal probability recalculation | Completes the what-if flow | WF is static — this is real-time |
 | FEAT-301 | Book-level copilot questions | Second biggest USP | WF literally cannot do this |
 | FEAT-302 | Formal recommendation cards | Makes RM workflow real | WF has no AI rationale in workflow |

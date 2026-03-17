@@ -27,7 +27,16 @@
 - HELP.md — full feature guide and setup docs
 - PRD.md v1.1 — updated with WF benchmark, FEAT-308/309 added
 
-## What Shipped This Session (2026-03-17 — Session 7)
+## What Shipped This Session (2026-03-17 — Session 8)
+- **FEAT-102/108/109: Complete client onboarding wizard** ✅
+  - FEAT-102: 5-question risk questionnaire → auto-calculates risk_score + category (replaces manual slider)
+  - FEAT-108: POST /clients/{id}/portfolio — fund holdings, allocation %, auto-totals value and pct
+  - FEAT-109: POST /clients/{id}/goals — goals with Monte Carlo probability calculated on save
+  - ClientForm rebuilt as 4-tab wizard: Identity → Risk Profile → Portfolio → Goals
+  - Tabs 3+4 unlock after client is created; Skip buttons allow partial onboarding
+  - Commit: `87fb965` → pushed, Vercel deploying
+
+## What Shipped Last Session (2026-03-17 — Session 7)
 - **FEAT-101: Add + Edit Client module** ✅
   - 7 new fields on Client model: phone, email, date_of_birth, address, city, pincode, pan_number
   - `POST /clients` — create new client
@@ -49,17 +58,7 @@ Client model schema changed — 7 new columns. `_run_migrations()` in `main.py` 
 - Confirm `POST /clients` and `PUT /clients/{id}` work on https://aria-advisor.onrender.com
 - Confirm new client appears in client list after adding
 
-### 2. Complete client onboarding — FEAT-102, FEAT-108, FEAT-109 (full add-client flow)
-FEAT-101 is step 1 only (basic info). A newly added client has no portfolio, no holdings, no goals — making them invisible to AI features (briefing, copilot, goal projection).
-
-Full onboarding requires:
-- **FEAT-102** — Risk questionnaire (guided Q&A → auto-calculates risk score, replaces manual slider)
-- **FEAT-108** — Add portfolio + holdings (fund name, allocation %, value)
-- **FEAT-109** — Add goals (name, target amount, target date, monthly SIP → initial probability calculated)
-
-These 3 + FEAT-107 (multi-step wizard) = a complete "Add New Client" flow for the bank demo.
-
-### 3. FEAT-503 — Live goal probability recalculation
+### 2. FEAT-503 — Live goal probability recalculation (next committed backlog item)
 - Trigger projection calls automatically as sliders move (debounced)
 - Update goal cards in real-time with scenario probability and delta
 
