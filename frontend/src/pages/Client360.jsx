@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getClient } from '../api/client'
-import { ArrowLeft, AlertTriangle, Clock, CheckCircle, User, CalendarCheck } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Clock, CheckCircle, User, CalendarCheck, Sparkles } from 'lucide-react'
 import PortfolioChart from '../components/PortfolioChart'
 import HoldingsTable from '../components/HoldingsTable'
 import GoalsPanel from '../components/GoalsPanel'
@@ -101,13 +101,47 @@ export default function Client360() {
     )
   }
 
-  const highFlags = client.urgency_flags.filter(f => f.severity === 'high')
-  const otherFlags = client.urgency_flags.filter(f => f.severity !== 'high')
+  // Tabs shown on desktop (inside center panel); mobile adds Info + Copilot
+  const desktopTabs = [
+    { key: 'portfolio', label: 'Portfolio & Holdings' },
+    { key: 'goals', label: `Goals (${client.goals.length})` },
+    { key: 'events', label: `Life Events (${client.life_events.length})` },
+  ]
+  const mobileTabs = [
+    { key: 'portfolio', label: 'Portfolio' },
+    { key: 'goals', label: `Goals` },
+    { key: 'events', label: 'Life Events' },
+    { key: 'info', label: 'Client Info' },
+    { key: 'copilot', label: 'AI Copilot' },
+  ]
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      {/* Sidebar */}
-      <div className="w-64 bg-navy-950 flex flex-col flex-shrink-0">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50">
+
+      {/* ── Mobile top bar (hidden on lg+) ── */}
+      <div className="lg:hidden bg-navy-950 px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-1.5 text-navy-300 hover:text-white text-sm transition-colors"
+        >
+          <ArrowLeft size={14} />
+          <span className="text-xs">Back</span>
+        </button>
+        <div className="text-center">
+          <div className="text-white text-sm font-semibold">{client.name}</div>
+          <div className="text-navy-400 text-xs">{client.segment} · {fmt.inr(client.portfolio?.total_value)}</div>
+        </div>
+        <button
+          onClick={() => setShowMeetingPrep(true)}
+          className="flex items-center gap-1 px-2.5 py-1.5 bg-navy-800 text-white text-xs font-medium rounded-lg hover:bg-navy-700 transition-colors"
+        >
+          <CalendarCheck size={12} />
+          Prep
+        </button>
+      </div>
+
+      {/* ── Desktop left sidebar (hidden on mobile) ── */}
+      <div className="hidden lg:flex w-64 bg-navy-950 flex-col flex-shrink-0">
         <div className="p-6 border-b border-navy-800">
           <button
             onClick={() => navigate('/')}
@@ -190,10 +224,11 @@ export default function Client360() {
         )}
       </div>
 
-      {/* Center panel */}
+      {/* ── Center panel ── */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Topbar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+
+        {/* Desktop topbar (hidden on mobile) */}
+        <div className="hidden lg:block bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-lg font-bold text-gray-900">{client.name}</h1>
@@ -213,18 +248,14 @@ export default function Client360() {
         </div>
 
         {/* Situation Summary */}
-        <div className="px-6 pt-4 flex-shrink-0">
+        <div className="px-4 lg:px-6 pt-4 flex-shrink-0">
           <SituationSummary clientId={id} />
         </div>
 
-        {/* Tabs */}
-        <div className="px-6 pt-4 flex-shrink-0">
+        {/* ── Desktop tabs ── */}
+        <div className="hidden lg:block px-6 pt-4 flex-shrink-0">
           <div className="flex gap-0 border-b border-gray-200">
-            {[
-              { key: 'portfolio', label: 'Portfolio & Holdings' },
-              { key: 'goals', label: `Goals (${client.goals.length})` },
-              { key: 'events', label: `Life Events (${client.life_events.length})` },
-            ].map(tab => (
+            {desktopTabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
@@ -240,16 +271,35 @@ export default function Client360() {
           </div>
         </div>
 
+        {/* ── Mobile tabs (scrollable) ── */}
+        <div className="lg:hidden px-4 pt-3 flex-shrink-0">
+          <div className="flex gap-0 border-b border-gray-200 overflow-x-auto scrollbar-none">
+            {mobileTabs.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px whitespace-nowrap ${
+                  activeTab === tab.key
+                    ? 'border-navy-950 text-navy-950'
+                    : 'border-transparent text-gray-500'
+                }`}
+              >
+                {tab.label === 'AI Copilot'
+                  ? <span className="flex items-center gap-1"><Sparkles size={11} />AI</span>
+                  : tab.label
+                }
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Tab content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-5">
           {activeTab === 'portfolio' && (
             <div className="space-y-6">
-              {/* Chart */}
               <div className="bg-white rounded-xl border border-gray-200 p-5">
                 <PortfolioChart portfolio={client.portfolio} />
               </div>
-
-              {/* Holdings */}
               <div className="bg-white rounded-xl border border-gray-200 p-5">
                 <div className="text-sm font-semibold text-gray-700 mb-4">
                   Holdings ({client.portfolio?.holdings?.length || 0} funds)
@@ -272,11 +322,56 @@ export default function Client360() {
               )}
             </div>
           )}
+
+          {/* Mobile-only: Client Info tab */}
+          {activeTab === 'info' && (
+            <div className="lg:hidden space-y-4">
+              {/* Profile */}
+              <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-navy-950 rounded-full flex items-center justify-center">
+                    <User size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">{client.name}</div>
+                    <div className="text-sm text-gray-500">Age {client.age}</div>
+                    <span className={`text-xs px-2 py-0.5 rounded font-medium mt-1 inline-block ${
+                      client.segment === 'HNI' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
+                    }`}>{client.segment}</span>
+                  </div>
+                </div>
+                <RiskMeter score={client.risk_score} category={client.risk_category} />
+              </div>
+
+              {/* Flags */}
+              <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  Active Flags ({client.urgency_flags.length})
+                </div>
+                {client.urgency_flags.length === 0 ? (
+                  <div className="flex items-center gap-2 text-green-600 text-sm">
+                    <CheckCircle size={14} /> All clear — no active flags
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {client.urgency_flags.map((f, i) => <UrgencyBadge key={i} flag={f} />)}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Mobile-only: AI Copilot tab */}
+          {activeTab === 'copilot' && (
+            <div className="lg:hidden -mx-4 -my-5 h-[calc(100vh-280px)] min-h-[400px]">
+              <CopilotChat clientId={id} clientName={client.name} />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Right panel — Copilot */}
-      <div className="w-96 bg-white border-l border-gray-200 flex flex-col flex-shrink-0">
+      {/* ── Desktop right panel — Copilot (hidden on mobile) ── */}
+      <div className="hidden lg:flex w-96 bg-white border-l border-gray-200 flex-col flex-shrink-0">
         <CopilotChat clientId={id} clientName={client.name} />
       </div>
 

@@ -95,7 +95,7 @@ export default function ClientPortal() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top bar */}
-      <div className="bg-navy-950 px-6 py-4">
+      <div className="bg-navy-950 px-4 sm:px-6 py-3 sm:py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div>
             <div className="text-white font-bold text-lg tracking-tight">ARIA</div>
@@ -116,7 +116,7 @@ export default function ClientPortal() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
 
         {/* Portfolio Overview */}
         <div>

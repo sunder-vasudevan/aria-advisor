@@ -68,9 +68,34 @@ export default function ClientList() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      {/* Sidebar */}
-      <div className="w-64 bg-navy-950 flex flex-col flex-shrink-0">
+    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
+
+      {/* ── Mobile top nav (hidden on md+) ── */}
+      <div className="md:hidden bg-navy-950 px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+          <div className="text-white font-bold text-base tracking-tight">ARIA</div>
+          <div className="text-navy-300 text-xs">Advisor Workbench</div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={loadBriefing}
+            disabled={briefingLoading}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-navy-800 text-white text-xs font-medium rounded-lg disabled:opacity-60"
+          >
+            {briefingLoading ? <RefreshCw size={12} className="animate-spin" /> : <Bell size={12} />}
+            {briefingLoading ? 'Loading…' : 'Briefing'}
+          </button>
+          <button
+            onClick={() => { advisorLogout(); navigate('/login') }}
+            className="text-navy-400 text-xs hover:text-white transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+
+      {/* ── Desktop sidebar (hidden on mobile) ── */}
+      <div className="hidden md:flex w-64 bg-navy-950 flex-col flex-shrink-0">
         <div className="p-6 border-b border-navy-800">
           <div className="text-white font-bold text-lg tracking-tight">ARIA</div>
           <div className="text-navy-300 text-xs mt-0.5">Advisor Relationship Intelligence Assistant</div>
@@ -96,10 +121,11 @@ export default function ClientList() {
         </div>
       </div>
 
-      {/* Main */}
+      {/* ── Main ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-5">
+
+        {/* ── Desktop header (hidden on mobile) ── */}
+        <div className="hidden md:block bg-white border-b border-gray-200 px-8 py-5">
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-xl font-bold text-gray-900">
@@ -127,91 +153,34 @@ export default function ClientList() {
             </button>
           </div>
 
-          {/* Morning Briefing Card */}
-          {briefing && (
-            <div className="mt-4 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-              {/* Briefing header */}
-              <div className="flex items-center gap-2 px-5 py-3 bg-navy-950 border-b border-navy-800">
-                <Bell size={13} className="text-navy-300" />
-                <span className="text-sm font-semibold text-white">{briefing.headline}</span>
-                <span className="ml-auto text-xs text-navy-400">{briefing.date}</span>
-              </div>
-
-              {/* Narrative */}
-              <div className="px-5 py-3 bg-navy-50 border-b border-gray-100">
-                <p className="text-sm text-navy-900 leading-relaxed">{briefing.overall_narrative}</p>
-              </div>
-
-              {/* Needs attention — per-client rows */}
-              {briefing.clients && briefing.clients.length > 0 && (
-                <div className="divide-y divide-gray-100">
-                  <div className="px-5 py-2 bg-red-50 flex items-center gap-1.5">
-                    <AlertTriangle size={11} className="text-red-500" />
-                    <span className="text-xs font-semibold text-red-600 uppercase tracking-wider">Needs Attention</span>
-                  </div>
-                  {briefing.clients.map(c => (
-                    <div
-                      key={c.client_id}
-                      onClick={() => navigate(`/clients/${c.client_id}`)}
-                      className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
-                    >
-                      <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${
-                        c.urgency_flags.some(f => f.severity === 'high') ? 'bg-red-500' : 'bg-amber-400'
-                      }`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900">{c.name}</span>
-                          <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                            c.segment === 'HNI' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
-                          }`}>{c.segment}</span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-0.5 leading-snug">{c.summary}</p>
-                      </div>
-                      <ChevronRight size={14} className="text-gray-300 flex-shrink-0 mt-1" />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* On track — green section */}
-              {(() => {
-                const briefingIds = new Set((briefing.clients || []).map(c => c.client_id))
-                const onTrack = clients.filter(c => !briefingIds.has(c.id))
-                if (onTrack.length === 0) return null
-                return (
-                  <div className="border-t border-gray-100">
-                    <div className="px-5 py-2 bg-green-50 flex items-center gap-1.5">
-                      <CheckCircle size={11} className="text-green-600" />
-                      <span className="text-xs font-semibold text-green-700 uppercase tracking-wider">
-                        All Clear — {onTrack.length} client{onTrack.length !== 1 ? 's' : ''} on track
-                      </span>
-                    </div>
-                    <div className="px-5 py-3 flex flex-wrap gap-2">
-                      {onTrack.map(c => (
-                        <button
-                          key={c.id}
-                          onClick={() => navigate(`/clients/${c.id}`)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full text-xs font-medium text-green-800 hover:bg-green-100 transition-colors"
-                        >
-                          <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                          {c.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })()}
-            </div>
-          )}
+          {/* Morning Briefing Card — desktop */}
+          {briefing && <BriefingCard briefing={briefing} clients={clients} navigate={navigate} />}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-8">
+        {/* ── Mobile header + briefing ── */}
+        <div className="md:hidden bg-white border-b border-gray-200 px-4 py-4">
+          <h1 className="text-base font-bold text-gray-900">
+            Good morning, Rahul.
+          </h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric' })}
+          </p>
+          {attentionCount > 0 && (
+            <p className="text-xs text-red-600 mt-1 font-medium">
+              {attentionCount} client{attentionCount !== 1 ? 's' : ''} need attention today.
+            </p>
+          )}
+          {briefing && <BriefingCard briefing={briefing} clients={clients} navigate={navigate} />}
+        </div>
+
+        {/* ── Content ── */}
+        <div className="flex-1 overflow-auto p-4 md:p-8">
+
           {/* Search */}
           <div className="mb-4">
             <input
               type="text"
-              placeholder="Search clients by name or segment…"
+              placeholder="Search clients…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full max-w-sm px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy-300 bg-white"
@@ -224,8 +193,45 @@ export default function ClientList() {
             </div>
           )}
 
-          {/* Table */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* ── Mobile: card list ── */}
+          <div className="md:hidden space-y-3">
+            {filtered.map(client => (
+              <div
+                key={client.id}
+                onClick={() => navigate(`/clients/${client.id}`)}
+                className="bg-white rounded-xl border border-gray-200 p-4 cursor-pointer active:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-gray-900 truncate">{client.name}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">Age {client.age} · {client.risk_category}</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5 ml-3 flex-shrink-0">
+                    <SegmentBadge segment={client.segment} />
+                    <div className="font-semibold text-sm text-gray-900">{fmt.inr(client.total_value)}</div>
+                  </div>
+                </div>
+                <div className="mt-2.5 flex flex-wrap gap-1">
+                  {client.urgency_flags.length === 0 ? (
+                    <span className="badge-low">On Track</span>
+                  ) : (
+                    client.urgency_flags.slice(0, 2).map((f, i) => (
+                      <UrgencyBadge key={i} flag={f} />
+                    ))
+                  )}
+                  {client.urgency_flags.length > 2 && (
+                    <span className="text-xs text-gray-500 self-center">+{client.urgency_flags.length - 2} more</span>
+                  )}
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div className="text-center py-12 text-gray-400 text-sm">No clients found</div>
+            )}
+          </div>
+
+          {/* ── Desktop: table ── */}
+          <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
@@ -280,11 +286,90 @@ export default function ClientList() {
               <div className="text-center py-12 text-gray-400 text-sm">No clients found</div>
             )}
           </div>
+
           <div className="mt-3 text-xs text-gray-400 text-right">
             {filtered.length} of {clients.length} clients
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function BriefingCard({ briefing, clients, navigate }) {
+  return (
+    <div className="mt-4 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      {/* Briefing header */}
+      <div className="flex items-center gap-2 px-5 py-3 bg-navy-950 border-b border-navy-800">
+        <Bell size={13} className="text-navy-300" />
+        <span className="text-sm font-semibold text-white">{briefing.headline}</span>
+        <span className="ml-auto text-xs text-navy-400">{briefing.date}</span>
+      </div>
+
+      {/* Narrative */}
+      <div className="px-5 py-3 bg-navy-50 border-b border-gray-100">
+        <p className="text-sm text-navy-900 leading-relaxed">{briefing.overall_narrative}</p>
+      </div>
+
+      {/* Needs attention — per-client rows */}
+      {briefing.clients && briefing.clients.length > 0 && (
+        <div className="divide-y divide-gray-100">
+          <div className="px-5 py-2 bg-red-50 flex items-center gap-1.5">
+            <AlertTriangle size={11} className="text-red-500" />
+            <span className="text-xs font-semibold text-red-600 uppercase tracking-wider">Needs Attention</span>
+          </div>
+          {briefing.clients.map(c => (
+            <div
+              key={c.client_id}
+              onClick={() => navigate(`/clients/${c.client_id}`)}
+              className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+            >
+              <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${
+                c.urgency_flags.some(f => f.severity === 'high') ? 'bg-red-500' : 'bg-amber-400'
+              }`} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900">{c.name}</span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                    c.segment === 'HNI' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
+                  }`}>{c.segment}</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5 leading-snug">{c.summary}</p>
+              </div>
+              <ChevronRight size={14} className="text-gray-300 flex-shrink-0 mt-1" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* On track — green section */}
+      {(() => {
+        const briefingIds = new Set((briefing.clients || []).map(c => c.client_id))
+        const onTrack = clients.filter(c => !briefingIds.has(c.id))
+        if (onTrack.length === 0) return null
+        return (
+          <div className="border-t border-gray-100">
+            <div className="px-5 py-2 bg-green-50 flex items-center gap-1.5">
+              <CheckCircle size={11} className="text-green-600" />
+              <span className="text-xs font-semibold text-green-700 uppercase tracking-wider">
+                All Clear — {onTrack.length} client{onTrack.length !== 1 ? 's' : ''} on track
+              </span>
+            </div>
+            <div className="px-5 py-3 flex flex-wrap gap-2">
+              {onTrack.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => navigate(`/clients/${c.id}`)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full text-xs font-medium text-green-800 hover:bg-green-100 transition-colors"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

@@ -25,6 +25,15 @@
   }
 }
 
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @layer components {
   .badge-hni {
     @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800;
