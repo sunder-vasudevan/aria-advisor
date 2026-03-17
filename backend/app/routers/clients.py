@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 from ..database import get_db
 from ..models import Client, Portfolio, Holding, Goal, LifeEvent
-from ..schemas import ClientListItem, Client360, HoldingOut, GoalOut, UrgencyFlag, GoalProjection, ClientCreate, ClientUpdate, derive_risk_category
+from ..schemas import ClientListItem, Client360, HoldingOut, GoalOut, UrgencyFlag, GoalProjection, ClientCreate, ClientUpdate, PortfolioCreate, GoalCreate, derive_risk_category
 from ..urgency import compute_urgency, urgency_score
 from ..simulation import monte_carlo_goal_probability
 
@@ -149,6 +149,98 @@ def get_goals(client_id: int, db: Session = Depends(get_db)):
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
     return client.goals
+
+
+@router.post("/{client_id}/portfolio", response_model=Client360, status_code=201)
+def create_portfolio(client_id: int, payload: PortfolioCreate, db: Session = Depends(get_db)):
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    # Remove existing portfolio if present (full replace)
+    if client.portfolio:
+        db.delete(client.portfolio)
+        db.commit()
+
+    total_value = sum(h.current_value for h in payload.holdings)
+
+    portfolio = Portfolio(
+        client_id=client_id,
+        total_value=total_value,
+        equity_pct=payload.equity_pct,
+        debt_pct=payload.debt_pct,
+        cash_pct=payload.cash_pct,
+        target_equity_pct=payload.target_equity_pct,
+        target_debt_pct=payload.target_debt_pct,
+        target_cash_pct=payload.target_cash_pct,
+    )
+    db.add(portfolio)
+    db.flush()
+
+    for h in payload.holdings:
+        current_pct = round((h.current_value / total_value) * 100, 2) if total_value > 0 else 0
+        holding = Holding(
+            portfolio_id=portfolio.id,
+            fund_name=h.fund_name,
+            fund_category=h.fund_category,
+            fund_house=h.fund_house,
+            current_value=h.current_value,
+            target_pct=h.target_pct,
+            current_pct=current_pct,
+        )
+        db.add(holding)
+
+    db.commit()
+    db.refresh(client)
+
+    flags = compute_urgency(client, client.portfolio, client.goals, client.life_events)
+    return Client360(
+        id=client.id,
+        name=client.name,
+        age=client.age,
+        segment=client.segment,
+        risk_score=client.risk_score,
+        risk_category=client.risk_category,
+        phone=client.phone,
+        email=client.email,
+        date_of_birth=client.date_of_birth,
+        address=client.address,
+        city=client.city,
+        pincode=client.pincode,
+        pan_number=client.pan_number,
+        portfolio=client.portfolio,
+        goals=client.goals,
+        life_events=client.life_events,
+        urgency_flags=flags,
+    )
+
+
+@router.post("/{client_id}/goals", response_model=GoalOut, status_code=201)
+def create_goal(client_id: int, payload: GoalCreate, db: Session = Depends(get_db)):
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    portfolio_value = client.portfolio.total_value if client.portfolio else 0
+    probability = monte_carlo_goal_probability(
+        current_value=portfolio_value,
+        monthly_sip=payload.monthly_sip,
+        target_amount=payload.target_amount,
+        target_date=payload.target_date,
+    )
+
+    goal = Goal(
+        client_id=client_id,
+        goal_name=payload.goal_name,
+        target_amount=payload.target_amount,
+        target_date=payload.target_date,
+        monthly_sip=payload.monthly_sip,
+        probability_pct=probability,
+    )
+    db.add(goal)
+    db.commit()
+    db.refresh(goal)
+    return goal
 
 
 @router.get("/{client_id}/goal-projection", response_model=List[GoalProjection])

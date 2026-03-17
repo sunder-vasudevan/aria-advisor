@@ -32,6 +32,12 @@ export const createClient = (data) =>
 export const updateClient = (id, data) =>
   api.put(`/clients/${id}`, data).then(r => r.data)
 
+export const createPortfolio = (id, data) =>
+  api.post(`/clients/${id}/portfolio`, data).then(r => r.data)
+
+export const createGoal = (id, data) =>
+  api.post(`/clients/${id}/goals`, data).then(r => r.data)
+
 export const fmt = {
   inr: (v) => {
     if (!v && v !== 0) return '—'

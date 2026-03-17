@@ -118,6 +118,35 @@ class Client360(BaseModel):
         from_attributes = True
 
 
+# ─── Portfolio Create ─────────────────────────────────────────────────────────
+
+class HoldingCreate(BaseModel):
+    fund_name: str
+    fund_category: str
+    fund_house: str
+    current_value: float
+    target_pct: float
+
+
+class PortfolioCreate(BaseModel):
+    holdings: List[HoldingCreate]
+    equity_pct: float
+    debt_pct: float
+    cash_pct: float
+    target_equity_pct: float
+    target_debt_pct: float
+    target_cash_pct: float
+
+
+# ─── Goal Create ──────────────────────────────────────────────────────────────
+
+class GoalCreate(BaseModel):
+    goal_name: str
+    target_amount: float
+    target_date: date
+    monthly_sip: float
+
+
 # ─── Client Create / Update ───────────────────────────────────────────────────
 
 class ClientCreate(BaseModel):
