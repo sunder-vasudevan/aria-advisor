@@ -14,6 +14,15 @@ class Client(Base):
     risk_score = Column(Integer, nullable=False)  # 1–10
     risk_category = Column(String, nullable=False)  # Conservative | Moderate | Aggressive
 
+    # Contact & personal details (FEAT-101)
+    phone = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    date_of_birth = Column(Date, nullable=True)
+    address = Column(String, nullable=True)
+    city = Column(String, nullable=True)
+    pincode = Column(String, nullable=True)
+    pan_number = Column(String, nullable=True)
+
     portfolio = relationship("Portfolio", back_populates="client", uselist=False)
     goals = relationship("Goal", back_populates="client")
     life_events = relationship("LifeEvent", back_populates="client")

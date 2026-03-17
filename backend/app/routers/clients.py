@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 from ..database import get_db
 from ..models import Client, Portfolio, Holding, Goal, LifeEvent
-from ..schemas import ClientListItem, Client360, HoldingOut, GoalOut, UrgencyFlag, GoalProjection
+from ..schemas import ClientListItem, Client360, HoldingOut, GoalOut, UrgencyFlag, GoalProjection, ClientCreate, ClientUpdate, derive_risk_category
 from ..urgency import compute_urgency, urgency_score
 from ..simulation import monte_carlo_goal_probability
 
@@ -50,6 +50,84 @@ def get_client(client_id: int, db: Session = Depends(get_db)):
         segment=client.segment,
         risk_score=client.risk_score,
         risk_category=client.risk_category,
+        portfolio=client.portfolio,
+        goals=client.goals,
+        life_events=client.life_events,
+        urgency_flags=flags,
+    )
+
+
+@router.post("", response_model=Client360, status_code=201)
+def create_client(payload: ClientCreate, db: Session = Depends(get_db)):
+    client = Client(
+        name=payload.name,
+        age=payload.age,
+        segment=payload.segment,
+        risk_score=payload.risk_score,
+        risk_category=derive_risk_category(payload.risk_score),
+        phone=payload.phone,
+        email=payload.email,
+        date_of_birth=payload.date_of_birth,
+        address=payload.address,
+        city=payload.city,
+        pincode=payload.pincode,
+        pan_number=payload.pan_number,
+    )
+    db.add(client)
+    db.commit()
+    db.refresh(client)
+    return Client360(
+        id=client.id,
+        name=client.name,
+        age=client.age,
+        segment=client.segment,
+        risk_score=client.risk_score,
+        risk_category=client.risk_category,
+        phone=client.phone,
+        email=client.email,
+        date_of_birth=client.date_of_birth,
+        address=client.address,
+        city=client.city,
+        pincode=client.pincode,
+        pan_number=client.pan_number,
+        portfolio=None,
+        goals=[],
+        life_events=[],
+        urgency_flags=[],
+    )
+
+
+@router.put("/{client_id}", response_model=Client360)
+def update_client(client_id: int, payload: ClientUpdate, db: Session = Depends(get_db)):
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    update_data = payload.model_dump(exclude_unset=True)
+    if "risk_score" in update_data:
+        update_data["risk_category"] = derive_risk_category(update_data["risk_score"])
+
+    for field, value in update_data.items():
+        setattr(client, field, value)
+
+    db.commit()
+    db.refresh(client)
+
+    flags = compute_urgency(client, client.portfolio, client.goals, client.life_events)
+    return Client360(
+        id=client.id,
+        name=client.name,
+        age=client.age,
+        segment=client.segment,
+        risk_score=client.risk_score,
+        risk_category=client.risk_category,
+        phone=client.phone,
+        email=client.email,
+        date_of_birth=client.date_of_birth,
+        address=client.address,
+        city=client.city,
+        pincode=client.pincode,
+        pan_number=client.pan_number,
         portfolio=client.portfolio,
         goals=client.goals,
         life_events=client.life_events,

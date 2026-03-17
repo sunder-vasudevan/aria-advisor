@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, TrendingUp, ChevronRight, RefreshCw, Bell, CheckCircle } from 'lucide-react'
+import { AlertTriangle, TrendingUp, ChevronRight, RefreshCw, Bell, CheckCircle, UserPlus } from 'lucide-react'
 import { getClients, getBriefing, fmt } from '../api/client'
 import { getAdvisorSession, advisorLogout } from '../auth'
 
@@ -140,6 +140,13 @@ export default function ClientList() {
                 {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
             </div>
+            <button
+              onClick={() => navigate('/clients/new')}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-200 bg-white text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <UserPlus size={14} />
+              Add Client
+            </button>
             <button
               onClick={loadBriefing}
               disabled={briefingLoading}

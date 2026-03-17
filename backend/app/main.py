@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from sqlalchemy import text
 
 from .database import engine, Base
 from .routers import clients, copilot, briefing, situation, meeting_prep
@@ -10,10 +11,30 @@ from .routers import clients, copilot, briefing, situation, meeting_prep
 load_dotenv()
 
 
+def _run_migrations():
+    """Add new columns to existing tables without losing data."""
+    new_columns = [
+        ("phone", "VARCHAR"),
+        ("email", "VARCHAR"),
+        ("date_of_birth", "DATE"),
+        ("address", "VARCHAR"),
+        ("city", "VARCHAR"),
+        ("pincode", "VARCHAR"),
+        ("pan_number", "VARCHAR"),
+    ]
+    with engine.connect() as conn:
+        for col, col_type in new_columns:
+            try:
+                conn.execute(text(f"ALTER TABLE clients ADD COLUMN {col} {col_type}"))
+                conn.commit()
+            except Exception:
+                pass  # Column already exists
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create all tables on startup (SQLite local dev + first-run PostgreSQL)
     Base.metadata.create_all(bind=engine)
+    _run_migrations()
     yield
 
 

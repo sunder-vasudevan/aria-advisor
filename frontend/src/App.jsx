@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ClientList from './pages/ClientList'
 import Client360 from './pages/Client360'
+import ClientForm from './pages/ClientForm'
 import AdvisorLogin from './pages/AdvisorLogin'
 import ClientLogin from './pages/ClientLogin'
 import ClientPortal from './pages/ClientPortal'
@@ -19,8 +20,14 @@ export default function App() {
         <Route path="/" element={
           <RequireAdvisorAuth><ClientList /></RequireAdvisorAuth>
         } />
+        <Route path="/clients/new" element={
+          <RequireAdvisorAuth><ClientForm /></RequireAdvisorAuth>
+        } />
         <Route path="/clients/:id" element={
           <RequireAdvisorAuth><Client360 /></RequireAdvisorAuth>
+        } />
+        <Route path="/clients/:id/edit" element={
+          <RequireAdvisorAuth><ClientForm /></RequireAdvisorAuth>
         } />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getClient } from '../api/client'
-import { ArrowLeft, AlertTriangle, Clock, CheckCircle, User, CalendarCheck, Sparkles } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Clock, CheckCircle, User, CalendarCheck, Sparkles, Pencil } from 'lucide-react'
 import PortfolioChart from '../components/PortfolioChart'
 import HoldingsTable from '../components/HoldingsTable'
 import GoalsPanel from '../components/GoalsPanel'
@@ -159,8 +159,19 @@ export default function Client360() {
           <div className="w-12 h-12 bg-navy-700 rounded-full flex items-center justify-center mb-3">
             <User size={20} className="text-white" />
           </div>
-          <div className="text-white font-semibold text-base">{client.name}</div>
-          <div className="text-navy-300 text-xs mt-0.5">Age {client.age}</div>
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="text-white font-semibold text-base">{client.name}</div>
+              <div className="text-navy-300 text-xs mt-0.5">Age {client.age}</div>
+            </div>
+            <button
+              onClick={() => navigate(`/clients/${client.id}/edit`)}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-navy-800 text-navy-200 text-xs rounded-lg hover:bg-navy-700 transition-colors"
+            >
+              <Pencil size={11} />
+              Edit
+            </button>
+          </div>
           <div className="mt-3 flex gap-2">
             <span className={`text-xs px-2 py-0.5 rounded font-medium ${
               client.segment === 'HNI'

@@ -26,6 +26,12 @@ export const getBriefing = (rmId = 'rm_001') =>
 export const getMeetingPrep = (id) =>
   api.get(`/clients/${id}/meeting-prep`).then(r => r.data)
 
+export const createClient = (data) =>
+  api.post('/clients', data).then(r => r.data)
+
+export const updateClient = (id, data) =>
+  api.put(`/clients/${id}`, data).then(r => r.data)
+
 export const fmt = {
   inr: (v) => {
     if (!v && v !== 0) return '—'

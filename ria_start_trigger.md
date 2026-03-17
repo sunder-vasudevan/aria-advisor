@@ -4,9 +4,10 @@ description: When Scott says "/riastart", read RIA project state and output a co
 type: feedback
 ---
 
-When Scott says `/riastart`, perform a session briefing BEFORE doing any other work:
+When Sunder says `/riastart`, perform a session briefing BEFORE doing any other work:
 
-1. Read `~/ria-advisor/NOTES.md` — current phase, last shipped, next feature
+1. Ask Sunder: **"What time is it? I'll log it as session start."**
+2. Read `~/ria-advisor/NOTES.md` — current phase, last shipped, next feature
 2. Read the last session row in `~/ria-advisor/SESSION_LOG.md` — what happened last session
 3. Read `~/ria-advisor/PRD.md` Section 6 (Build Phases) — check Phase 2 priority queue
 4. Start the app by running `bash ~/ria-advisor/start.sh` in the background

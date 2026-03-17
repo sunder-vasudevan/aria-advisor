@@ -3,6 +3,14 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 
+def derive_risk_category(risk_score: int) -> str:
+    if risk_score <= 3:
+        return "Conservative"
+    elif risk_score <= 6:
+        return "Moderate"
+    return "Aggressive"
+
+
 # ─── Holding ────────────────────────────────────────────────────────────────
 
 class HoldingOut(BaseModel):
@@ -94,6 +102,13 @@ class Client360(BaseModel):
     segment: str
     risk_score: int
     risk_category: str
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    pincode: Optional[str] = None
+    pan_number: Optional[str] = None
     portfolio: Optional[PortfolioOut]
     goals: List[GoalOut] = []
     life_events: List[LifeEventOut] = []
@@ -101,6 +116,36 @@ class Client360(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ─── Client Create / Update ───────────────────────────────────────────────────
+
+class ClientCreate(BaseModel):
+    name: str
+    age: int
+    segment: str  # "Retail" | "HNI"
+    risk_score: int  # 1–10
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    pincode: Optional[str] = None
+    pan_number: Optional[str] = None
+
+
+class ClientUpdate(BaseModel):
+    name: Optional[str] = None
+    age: Optional[int] = None
+    segment: Optional[str] = None
+    risk_score: Optional[int] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    pincode: Optional[str] = None
+    pan_number: Optional[str] = None
 
 
 # ─── Copilot ─────────────────────────────────────────────────────────────────
