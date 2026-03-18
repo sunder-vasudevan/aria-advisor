@@ -10,7 +10,7 @@
 ### [TEST-XXX] — Feature Name (FEAT-ID)
 **Date:** YYYY-MM-DD
 **Phase:**
-**Tested by:** Sunder
+**Tested by:** Sunny Hayes
 **Test type:** Manual / Automated / Both
 **Environment:** Local / Render+Vercel (prod)
 
@@ -27,7 +27,7 @@
 ### [TEST-001] — Client Book + Urgency Ranking
 **Date:** 2026-03-16
 **Phase:** 1
-**Tested by:** Sunder
+**Tested by:** Sunny Hayes
 **Test type:** Manual
 **Environment:** Local + Vercel (prod)
 
@@ -45,7 +45,7 @@
 ### [TEST-002] — Client 360 View
 **Date:** 2026-03-16
 **Phase:** 1
-**Tested by:** Sunder
+**Tested by:** Sunny Hayes
 **Test type:** Manual
 **Environment:** Local + Vercel (prod)
 
@@ -64,7 +64,7 @@
 ### [TEST-003] — AI Situation Summary
 **Date:** 2026-03-16
 **Phase:** 1
-**Tested by:** Sunder
+**Tested by:** Sunny Hayes
 **Test type:** Manual
 **Environment:** Local + Vercel (prod)
 
@@ -81,7 +81,7 @@
 ### [TEST-004] — AI Copilot Chat
 **Date:** 2026-03-16
 **Phase:** 1
-**Tested by:** Sunder
+**Tested by:** Sunny Hayes
 **Test type:** Manual
 **Environment:** Local + Vercel (prod)
 
@@ -99,7 +99,7 @@
 ### [TEST-005] — Morning Briefing
 **Date:** 2026-03-16
 **Phase:** 1
-**Tested by:** Sunder
+**Tested by:** Sunny Hayes
 **Test type:** Manual
 **Environment:** Local + Vercel (prod)
 
@@ -115,7 +115,7 @@
 ### [TEST-006] — Monte Carlo + What-If Sliders (FEAT-501, FEAT-502)
 **Date:** 2026-03-16
 **Phase:** 2
-**Tested by:** Sunder
+**Tested by:** Sunny Hayes
 **Test type:** Manual
 **Environment:** Local + Vercel (prod)
 

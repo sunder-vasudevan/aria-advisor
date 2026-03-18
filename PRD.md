@@ -5,7 +5,7 @@
 **Version:** 1.1
 **Date:** 2026-03-16
 **Status:** Active
-**Owner:** Sunder Vasudevan
+**Owner:** Sunny Hayes Vasudevan
 
 ---
 
@@ -182,8 +182,8 @@ This scenario must work end-to-end for every demo:
 | Time to target date display | ✅ | — | Years + month/year |
 | Monte Carlo simulation engine | ✅ | FEAT-501 | Backend endpoint live at `/clients/{id}/goal-projection` |
 | What-if sliders UI | ✅ | FEAT-502 | Goals tab includes SIP/return/timeline slider scenario panel |
-| Live goal probability recalculation | ⬜ | FEAT-503 | Real-time update as sliders move |
-| SIP projection calculator | ⬜ | FEAT-504 | "Required SIP to hit goal" |
+| Live goal probability recalculation | ✅ | FEAT-503 | Debounced auto-run on slider change. Mode 1 (probability) + Mode 2 (required SIP) |
+| SIP projection calculator | ✅ | FEAT-504 | find_required_sip() binary search — "Required SIP to hit goal" shown in Mode 2 |
 | Goal underfunding gap alert | ⬜ | FEAT-505 | "₹8,200/month more needed" |
 
 ---
