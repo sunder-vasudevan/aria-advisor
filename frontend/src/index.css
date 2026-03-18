@@ -48,6 +48,11 @@
   }
 }
 
+@media print {
+  body > * { display: none !important; }
+  .meeting-prep-print { display: block !important; position: static !important; width: 100% !important; box-shadow: none !important; overflow: visible !important; }
+}
+
 @layer components {
   .badge-hni {
     @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800;

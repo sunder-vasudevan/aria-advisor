@@ -133,11 +133,11 @@ export default function GoalsPanel({ clientId, goals }) {
             </div>
             <div className="flex items-center gap-2">
               <button onClick={runScenario} disabled={loading}
-                className="px-4 py-2 rounded-xl bg-navy-950 text-white text-sm font-semibold hover:bg-navy-800 disabled:opacity-60 transition-colors">
+                className="px-4 py-2 rounded-lg bg-navy-950 text-white text-sm font-semibold hover:bg-navy-800 disabled:opacity-60 transition-colors">
                 {loading ? 'Running…' : 'Run Scenario'}
               </button>
               <button onClick={resetScenario}
-                className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
                 Reset
               </button>
             </div>
@@ -193,7 +193,7 @@ export default function GoalsPanel({ clientId, goals }) {
 
               {/* Scenario result */}
               {projection && (
-                <div className={`mt-3 px-3 py-2.5 rounded-xl border flex items-center justify-between gap-4 ${
+                <div className={`mt-3 px-3 py-2.5 rounded-lg border flex items-center justify-between gap-4 ${
                   delta >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
                 }`}>
                   <div className="flex items-center gap-1.5">

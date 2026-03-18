@@ -51,9 +51,14 @@ export default function PortfolioChart({ portfolio }) {
   const driftRow = (item) => {
     const drift = item.value - item.target
     const abs = Math.abs(drift).toFixed(1)
-    if (drift > 2) return <span className="text-red-600 text-xs font-medium">+{abs}% ↑</span>
-    if (drift < -2) return <span className="text-green-600 text-xs font-medium">-{abs}% ↓</span>
-    return <span className="text-green-600 text-xs">On target</span>
+    const tooltip = drift > 2
+      ? `Overweight by ${abs}% — consider rebalancing`
+      : drift < -2
+        ? `Underweight by ${abs}% — consider adding`
+        : 'Within target range'
+    if (drift > 2) return <span title={tooltip} className="text-red-600 text-xs font-medium cursor-help">+{abs}% ↑</span>
+    if (drift < -2) return <span title={tooltip} className="text-green-600 text-xs font-medium cursor-help">-{abs}% ↓</span>
+    return <span title={tooltip} className="text-green-600 text-xs cursor-help">On target</span>
   }
 
   return (

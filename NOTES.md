@@ -28,6 +28,18 @@
 - PRD.md v1.1 — updated with WF benchmark, FEAT-308/309 added
 
 ## What Shipped This Session (2026-03-18 — Session 10)
+- **UI/UX Batch 3 — 10 fixes** ✅
+  - Fix 8: Concentric radius correction — `rounded-xl` inner buttons inside `rounded-2xl p-5` wrappers stepped down to `rounded-lg` in GoalsPanel (Run Scenario, Reset, scenario result) and Client360
+  - Fix 9: MeetingPrepPanel slide-in animation — always-mounted with CSS transform toggle in Client360; backdrop separate; MeetingPrepPanel loses its own `fixed` wrapper, returns plain content div with `meeting-prep-print` class
+  - Fix J: Active filter pill stronger visual — all active pills now `bg-navy-950 text-white border-navy-950`; inactive `bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50`; `transition-all` on both
+  - Fix K: Client initials avatar — `User` icon replaced with derived initials (first 2 letters, uppercase) in both desktop sidebar and mobile info tab avatars in Client360; `User` import removed
+  - Fix L: Portfolio drift tooltip — `title` attribute on drift spans in PortfolioChart with "Overweight by X% — consider rebalancing", "Underweight by X% — consider adding", or "Within target range"; `cursor-help` added
+  - Fix M: Left sidebar collapse toggle — `sidebarCollapsed` state in Client360; sidebar transitions `w-64` ↔ `w-12`; collapsed shows `ChevronRight` expand button; expanded shows `ChevronLeft` collapse button at top; `ChevronLeft` / `ChevronRight` imported
+  - Fix N: Print styles — `@media print` block added to index.css; `.meeting-prep-print` class on MeetingPrepPanel root div
+  - Fix O: aria-labels — `aria-label` added to Print (Meeting prep), Close (Meeting prep), Delete interaction (Trash2), Send message (CopilotChat), Edit client button, Collapse/Expand sidebar buttons
+  - Fix P: autocomplete attributes — `autoComplete` added to all ClientForm fields: name, bday, off (PAN), tel, email, street-address, address-level2, postal-code
+  - Fix Q: Lazy-mount inactive tabs — `useRef` `everActiveRef` tracks visited tabs; non-portfolio tabs render only after first visit, then stay mounted with `hidden` class; `handleTabChange` replaces direct `setActiveTab` calls
+
 - **UI/UX Batch 2 — 8 fixes** ✅
   - Fix 5: Prefetch on hover — `handlePrefetch` via `useRef` cache in ClientList; `window.__ariaClientCache` populated on hover, checked in Client360 useEffect for instant render
   - Fix 6: Layered shadow tokens — `shadow-card`, `shadow-modal`, `shadow-card-hover` added to tailwind.config; applied across all card elements, modals, and hover states

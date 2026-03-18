@@ -24,15 +24,7 @@ export default function MeetingPrepPanel({ clientId, clientName, onClose }) {
   }, [clientId])
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/30 z-40"
-        onClick={onClose}
-      />
-
-      {/* Panel */}
-      <div className="fixed inset-y-0 right-0 w-full sm:w-[480px] bg-white shadow-modal z-50 flex flex-col meeting-prep-panel">
+    <div className="w-full sm:w-[480px] h-full bg-white overflow-y-auto shadow-modal flex flex-col meeting-prep-print">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-navy-950 flex-shrink-0">
           <div>
@@ -44,12 +36,14 @@ export default function MeetingPrepPanel({ clientId, clientName, onClose }) {
               onClick={() => window.print()}
               className="text-navy-300 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center p-2 active:scale-[0.96] transition-transform"
               title="Print"
+              aria-label="Print meeting prep"
             >
               <Printer size={16} />
             </button>
             <button
               onClick={onClose}
               className="text-navy-300 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center p-2 active:scale-[0.96] transition-transform"
+              aria-label="Close meeting prep"
             >
               <X size={16} />
             </button>
@@ -163,6 +157,5 @@ export default function MeetingPrepPanel({ clientId, clientName, onClose }) {
           )}
         </div>
       </div>
-    </>
   )
 }

@@ -37,20 +37,20 @@
 ### Batch 3 — LOW / Polish
 | # | Finding | File(s) | Status |
 |---|---------|---------|--------|
-| 8 | Concentric radius correction | GoalsPanel, Client360 | ⬜ |
-| 9 | MeetingPrepPanel slide-in animation | MeetingPrepPanel, index.css | ⬜ |
-| J | Active filter pill stronger visual treatment | InteractionsPanel | ⬜ |
-| K | Client initials avatar (replace generic icon) | Client360 | ⬜ |
-| L | Portfolio drift row — rebalance action/tooltip | PortfolioChart | ⬜ |
-| M | Left sidebar collapse toggle on Client360 | Client360 | ⬜ |
-| N | Print styles for MeetingPrepPanel | index.css | ⬜ |
+| 8 | Concentric radius correction | GoalsPanel, Client360 | ✅ |
+| 9 | MeetingPrepPanel slide-in animation | MeetingPrepPanel, index.css | ✅ |
+| J | Active filter pill stronger visual treatment | InteractionsPanel | ✅ |
+| K | Client initials avatar (replace generic icon) | Client360 | ✅ |
+| L | Portfolio drift row — rebalance action/tooltip | PortfolioChart | ✅ |
+| M | Left sidebar collapse toggle on Client360 | Client360 | ✅ |
+| N | Print styles for MeetingPrepPanel | index.css | ✅ |
 
 ### Systemic (cross-cutting)
 | # | Finding | File(s) | Status |
 |---|---------|---------|--------|
-| O | aria-label on all icon-only buttons | All components | ⬜ |
-| P | autocomplete attributes on form inputs | ClientForm | ⬜ |
-| Q | Lazy-mount inactive tabs | Client360 | ⬜ |
+| O | aria-label on all icon-only buttons | All components | ✅ |
+| P | autocomplete attributes on form inputs | ClientForm | ✅ |
+| Q | Lazy-mount inactive tabs | Client360 | ✅ |
 
 ### Security
 | # | Finding | File(s) | Status |
@@ -524,14 +524,14 @@ const [everActive, setEverActive] = useState({ portfolio: true })
 | G | Morning briefing collapsible | ClientList | MEDIUM | ✅ |
 | H | Locked tab tooltip | ClientForm | MEDIUM | ✅ |
 | I | Scenario before/after on ring | GoalsPanel | MEDIUM | ⏸ |
-| 8 | `visual-concentric-radius` | GoalsPanel, Client360 | LOW | ⬜ |
-| 9 | `exit-requires-wrapper` | MeetingPrepPanel | LOW | ⬜ |
-| J | Active filter pill styling | InteractionsPanel | LOW | ⬜ |
-| K | Client initials avatar | Client360 | LOW | ⬜ |
-| L | Drift row rebalance tooltip | PortfolioChart | LOW | ⬜ |
-| M | Left sidebar collapse toggle | Client360 | LOW | ⬜ |
-| N | Print styles for MeetingPrepPanel | index.css | LOW | ⬜ |
-| O | `aria-label` on icon-only buttons | All components | SYSTEMIC | ⬜ |
-| P | `autocomplete` on form inputs | ClientForm | SYSTEMIC | ⬜ |
-| Q | Lazy-mount inactive tabs | Client360 | SYSTEMIC | ⬜ |
+| 8 | `visual-concentric-radius` | GoalsPanel, Client360 | LOW | ✅ |
+| 9 | `exit-requires-wrapper` | MeetingPrepPanel | LOW | ✅ |
+| J | Active filter pill styling | InteractionsPanel | LOW | ✅ |
+| K | Client initials avatar | Client360 | LOW | ✅ |
+| L | Drift row rebalance tooltip | PortfolioChart | LOW | ✅ |
+| M | Left sidebar collapse toggle | Client360 | LOW | ✅ |
+| N | Print styles for MeetingPrepPanel | index.css | LOW | ✅ |
+| O | `aria-label` on icon-only buttons | All components | SYSTEMIC | ✅ |
+| P | `autocomplete` on form inputs | ClientForm | SYSTEMIC | ✅ |
+| Q | Lazy-mount inactive tabs | Client360 | SYSTEMIC | ✅ |
 | SEC | Remove superadmin credentials from DOM | AdvisorLogin | SECURITY | ✅ |

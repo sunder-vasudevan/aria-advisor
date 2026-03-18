@@ -192,6 +192,7 @@ export default function CopilotChat({ clientId, clientName, messages: externalMe
             onClick={() => send(input)}
             disabled={!input.trim() || loading}
             className="w-10 h-10 bg-navy-950 text-white rounded-xl flex items-center justify-center hover:bg-navy-800 disabled:opacity-40 transition-colors flex-shrink-0 active:scale-[0.96] transition-transform"
+            aria-label="Send message"
           >
             <Send size={14} />
           </button>

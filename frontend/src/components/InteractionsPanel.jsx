@@ -67,6 +67,7 @@ function InteractionCard({ interaction, onDelete, pendingDeleteId, setPendingDel
           <button
             onClick={() => setPendingDeleteId(interaction.id)}
             className="text-gray-200 hover:text-red-400 transition-colors flex-shrink-0 p-1 rounded-lg hover:bg-red-50"
+            aria-label="Delete interaction"
           >
             <Trash2 size={13} />
           </button>
@@ -360,8 +361,8 @@ export default function InteractionsPanel({ clientId }) {
       {interactions.length > 0 && (
         <div className="flex gap-1.5 flex-wrap">
           <button onClick={() => setFilter('all')}
-            className={`px-3 py-1 text-xs rounded-full font-medium transition-colors border active:scale-[0.96] transition-transform ${
-              filter === 'all' ? 'bg-navy-950 text-white border-navy-950' : 'border-gray-200 text-gray-500 hover:border-gray-300 bg-white'
+            className={`px-3 py-1 text-xs rounded-full font-medium transition-all border active:scale-[0.96] ${
+              filter === 'all' ? 'bg-navy-950 text-white border-navy-950' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
             }`}>
             All ({interactions.length})
           </button>
@@ -370,8 +371,8 @@ export default function InteractionsPanel({ clientId }) {
             if (!count) return null
             return (
               <button key={key} onClick={() => setFilter(key)}
-                className={`px-3 py-1 text-xs rounded-full font-medium transition-colors border active:scale-[0.96] transition-transform ${
-                  filter === key ? `${m.bg} ${m.text} ${m.border}` : 'border-gray-200 text-gray-500 hover:border-gray-300 bg-white'
+                className={`px-3 py-1 text-xs rounded-full font-medium transition-all border active:scale-[0.96] ${
+                  filter === key ? 'bg-navy-950 text-white border-navy-950' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}>
                 {m.label} ({count})
               </button>

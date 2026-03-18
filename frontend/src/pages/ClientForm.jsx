@@ -437,6 +437,7 @@ export default function ClientForm() {
                       value={form.name}
                       onChange={e => setField('name', e.target.value)}
                       placeholder="e.g. Priya Sharma"
+                      autoComplete="name"
                       className={INPUT_CLS}
                     />
                   </div>
@@ -448,6 +449,7 @@ export default function ClientForm() {
                         type="date"
                         value={form.date_of_birth}
                         onChange={e => setField('date_of_birth', e.target.value)}
+                        autoComplete="bday"
                         className={INPUT_CLS}
                       />
                     </div>
@@ -474,6 +476,7 @@ export default function ClientForm() {
                       onChange={e => setField('pan_number', e.target.value.toUpperCase())}
                       placeholder="ABCDE1234F"
                       maxLength={10}
+                      autoComplete="off"
                       className={`${INPUT_CLS} uppercase`}
                     />
                   </div>
@@ -490,6 +493,7 @@ export default function ClientForm() {
                         value={form.phone}
                         onChange={e => setField('phone', e.target.value)}
                         placeholder="+91 98765 43210"
+                        autoComplete="tel"
                         className={INPUT_CLS}
                       />
                     </div>
@@ -500,6 +504,7 @@ export default function ClientForm() {
                         value={form.email}
                         onChange={e => setField('email', e.target.value)}
                         placeholder="priya@example.com"
+                        autoComplete="email"
                         className={INPUT_CLS}
                       />
                     </div>
@@ -512,6 +517,7 @@ export default function ClientForm() {
                       value={form.address}
                       onChange={e => setField('address', e.target.value)}
                       placeholder="Street / Building / Flat"
+                      autoComplete="street-address"
                       className={INPUT_CLS}
                     />
                   </div>
@@ -524,6 +530,7 @@ export default function ClientForm() {
                         value={form.city}
                         onChange={e => setField('city', e.target.value)}
                         placeholder="Mumbai"
+                        autoComplete="address-level2"
                         className={INPUT_CLS}
                       />
                     </div>
@@ -535,6 +542,7 @@ export default function ClientForm() {
                         onChange={e => setField('pincode', e.target.value)}
                         placeholder="400001"
                         maxLength={6}
+                        autoComplete="postal-code"
                         className={INPUT_CLS}
                       />
                     </div>
