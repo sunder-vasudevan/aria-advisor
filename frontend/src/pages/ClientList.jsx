@@ -109,7 +109,12 @@ export default function ClientList() {
         </nav>
         <div className="p-4 border-t border-navy-800">
           <div className="text-navy-400 text-xs">Logged in as</div>
-          <div className="text-white text-sm font-medium mt-0.5">{session?.username || 'rm_demo'}</div>
+          <div className="flex items-center gap-2 mt-0.5">
+            <div className="text-white text-sm font-medium">{session?.displayName || session?.username || 'rm_demo'}</div>
+            {session?.role === 'superadmin' && (
+              <span className="text-xs px-1.5 py-0.5 rounded bg-amber-400 text-amber-900 font-semibold leading-none">SUPER</span>
+            )}
+          </div>
           <div className="text-navy-400 text-xs">Mumbai Branch</div>
           <button
             onClick={() => { advisorLogout(); navigate('/login') }}
@@ -129,7 +134,7 @@ export default function ClientList() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-xl font-bold text-gray-900">
-                Good morning, Rahul.
+                Good morning, {session?.displayName || 'Rahul'}.
                 {attentionCount > 0 && (
                   <span className="text-red-600 ml-2">
                     {attentionCount} client{attentionCount !== 1 ? 's' : ''} need attention today.
@@ -167,7 +172,7 @@ export default function ClientList() {
         {/* ── Mobile header + briefing ── */}
         <div className="md:hidden bg-white border-b border-gray-200 px-4 py-4">
           <h1 className="text-base font-bold text-gray-900">
-            Good morning, Rahul.
+            Good morning, {session?.displayName || 'Rahul'}.
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric' })}

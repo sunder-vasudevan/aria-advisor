@@ -3,9 +3,19 @@ const CLIENT_KEY  = 'aria_client_session'
 
 // ─── Advisor ─────────────────────────────────────────────────────────────────
 
+const ADVISOR_ACCOUNTS = {
+  'rm_demo':      { password: 'aria2026', role: 'advisor',    displayName: 'Rahul' },
+  'sunny_hayes':  { password: 'aria2026', role: 'superadmin', displayName: 'Sunny Hayes' },
+}
+
 export const advisorLogin = (username, password) => {
-  if (username === 'rm_demo' && password === 'aria2026') {
-    localStorage.setItem(ADVISOR_KEY, JSON.stringify({ username, role: 'advisor' }))
+  const account = ADVISOR_ACCOUNTS[username]
+  if (account && account.password === password) {
+    localStorage.setItem(ADVISOR_KEY, JSON.stringify({
+      username,
+      role: account.role,
+      displayName: account.displayName,
+    }))
     return true
   }
   return false

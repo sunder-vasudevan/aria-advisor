@@ -75,11 +75,20 @@ export default function AdvisorLogin() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <span className="text-xs text-gray-400">Demo: username </span>
-            <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">rm_demo</code>
-            <span className="text-xs text-gray-400"> / password </span>
-            <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">aria2026</code>
+          <div className="mt-6 space-y-1.5 text-center">
+            <div>
+              <span className="text-xs text-gray-400">Advisor: </span>
+              <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">rm_demo</code>
+              <span className="text-xs text-gray-400"> / </span>
+              <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">aria2026</code>
+            </div>
+            <div className="flex items-center justify-center gap-1.5">
+              <span className="text-xs text-gray-400">Super Admin: </span>
+              <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">sunny_hayes</code>
+              <span className="text-xs text-gray-400"> / </span>
+              <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">aria2026</code>
+              <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-semibold leading-none">SUPER</span>
+            </div>
           </div>
         </div>
 
