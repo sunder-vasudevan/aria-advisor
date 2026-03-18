@@ -245,7 +245,7 @@ def create_goal(client_id: int, payload: GoalCreate, db: Session = Depends(get_d
 
 @router.put("/{client_id}/goals/{goal_id}", response_model=GoalOut)
 def update_goal(client_id: int, goal_id: int, payload: GoalUpdate, db: Session = Depends(get_db)):
-    goal = db.query(models.Goal).filter(models.Goal.id == goal_id, models.Goal.client_id == client_id).first()
+    goal = db.query(Goal).filter(Goal.id == goal_id, Goal.client_id == client_id).first()
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")
     for field, value in payload.dict(exclude_unset=True).items():
@@ -265,7 +265,7 @@ def update_goal(client_id: int, goal_id: int, payload: GoalUpdate, db: Session =
 
 @router.delete("/{client_id}/goals/{goal_id}")
 def delete_goal(client_id: int, goal_id: int, db: Session = Depends(get_db)):
-    goal = db.query(models.Goal).filter(models.Goal.id == goal_id, models.Goal.client_id == client_id).first()
+    goal = db.query(Goal).filter(Goal.id == goal_id, Goal.client_id == client_id).first()
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")
     db.delete(goal)
@@ -276,12 +276,12 @@ def delete_goal(client_id: int, goal_id: int, db: Session = Depends(get_db)):
 
 @router.get("/{client_id}/life-events", response_model=List[LifeEventOut])
 def get_life_events(client_id: int, db: Session = Depends(get_db)):
-    return db.query(models.LifeEvent).filter(models.LifeEvent.client_id == client_id).order_by(models.LifeEvent.event_date.desc()).all()
+    return db.query(LifeEvent).filter(LifeEvent.client_id == client_id).order_by(LifeEvent.event_date.desc()).all()
 
 
 @router.post("/{client_id}/life-events", response_model=LifeEventOut, status_code=201)
 def create_life_event(client_id: int, payload: LifeEventCreate, db: Session = Depends(get_db)):
-    event = models.LifeEvent(client_id=client_id, **payload.dict())
+    event = LifeEvent(client_id=client_id, **payload.dict())
     db.add(event)
     db.commit()
     db.refresh(event)
@@ -290,7 +290,7 @@ def create_life_event(client_id: int, payload: LifeEventCreate, db: Session = De
 
 @router.put("/{client_id}/life-events/{event_id}", response_model=LifeEventOut)
 def update_life_event(client_id: int, event_id: int, payload: LifeEventUpdate, db: Session = Depends(get_db)):
-    event = db.query(models.LifeEvent).filter(models.LifeEvent.id == event_id, models.LifeEvent.client_id == client_id).first()
+    event = db.query(LifeEvent).filter(LifeEvent.id == event_id, LifeEvent.client_id == client_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Life event not found")
     for field, value in payload.dict(exclude_unset=True).items():
@@ -302,7 +302,7 @@ def update_life_event(client_id: int, event_id: int, payload: LifeEventUpdate, d
 
 @router.delete("/{client_id}/life-events/{event_id}")
 def delete_life_event(client_id: int, event_id: int, db: Session = Depends(get_db)):
-    event = db.query(models.LifeEvent).filter(models.LifeEvent.id == event_id, models.LifeEvent.client_id == client_id).first()
+    event = db.query(LifeEvent).filter(LifeEvent.id == event_id, LifeEvent.client_id == client_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Life event not found")
     db.delete(event)
