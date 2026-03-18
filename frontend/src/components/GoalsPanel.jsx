@@ -72,7 +72,9 @@ function GoalForm({ initial, onSave, onCancel, saving, error }) {
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Target Date *</label>
-          <input type="date" value={form.target_date} onChange={e => set('target_date', e.target.value)}
+          <input type="date" value={form.target_date}
+            onChange={e => set('target_date', e.target.value)}
+            onInput={e => set('target_date', e.target.value)}
             className={INPUT_CLS} />
         </div>
       </div>
@@ -199,7 +201,7 @@ export default function GoalsPanel({ clientId, goals, onGoalsChange }) {
 
   const handleSaveNew = async () => {
     const form = newGoalForm
-    if (!form.goal_name?.trim() || !form.target_amount || Number(form.target_amount) <= 0 || !form.target_date) {
+if (!form.goal_name?.trim() || !form.target_amount || Number(form.target_amount) <= 0 || !form.target_date) {
       setFormError('Goal name, target amount, and target date are required.')
       return
     }
@@ -553,6 +555,7 @@ export default function GoalsPanel({ clientId, goals, onGoalsChange }) {
                 <label className="block text-xs font-medium text-gray-600 mb-1">Target Date *</label>
                 <input type="date" value={newGoalForm.target_date}
                   onChange={e => setNewGoalForm(f => ({ ...f, target_date: e.target.value }))}
+                  onInput={e => setNewGoalForm(f => ({ ...f, target_date: e.target.value }))}
                   className={INPUT_CLS} />
               </div>
             </div>
