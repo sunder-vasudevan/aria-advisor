@@ -200,20 +200,20 @@ export default function ClientList() {
             />
             <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
               <button
-                onClick={() => setViewMode('list')}
-                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
-                  viewMode === 'list' ? 'bg-navy-950 text-white' : 'text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                <LayoutList size={13} /> List
-              </button>
-              <button
                 onClick={() => setViewMode('grouped')}
                 className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
                   viewMode === 'grouped' ? 'bg-navy-950 text-white' : 'text-gray-500 hover:bg-gray-50'
                 }`}
               >
                 <Layers size={13} /> Grouped
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${
+                  viewMode === 'list' ? 'bg-navy-950 text-white' : 'text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                <LayoutList size={13} /> List
               </button>
             </div>
           </div>
@@ -382,14 +382,14 @@ function GroupedView({ clients, navigate }) {
         icon={<AlertTriangle size={13} className="text-red-500" />}
         color="bg-red-50 text-red-700"
         clients={needsAttention}
-        defaultOpen={true}
+        defaultOpen={false}
       />
       <Section
         label="On Track"
         icon={<CheckCircle size={13} className="text-emerald-600" />}
         color="bg-emerald-50 text-emerald-700"
         clients={onTrack}
-        defaultOpen={true}
+        defaultOpen={false}
       />
     </>
   )
