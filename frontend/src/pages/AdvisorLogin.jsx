@@ -98,8 +98,9 @@ export default function AdvisorLogin() {
           </Link>
         </div>
 
-        <div className="text-center mt-4">
-          <span className="text-navy-700 text-xs">ARIA v1.2</span>
+        <div className="text-center mt-4 space-y-1">
+          <div className="text-navy-700 text-xs">ARIA v1.2</div>
+          <div className="text-navy-600 text-xs">Built with ❤️ from Hyderabad</div>
         </div>
       </div>
     </div>
