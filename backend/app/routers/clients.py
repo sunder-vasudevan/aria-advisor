@@ -20,7 +20,7 @@ def list_clients(db: Session = Depends(get_db)):
         portfolio = c.portfolio
         goals = c.goals
         life_events = c.life_events
-        flags = compute_urgency(c, portfolio, goals, life_events)
+        flags = compute_urgency(c, portfolio, goals, life_events, c.interactions)
         score = urgency_score(flags)
         result.append(ClientListItem(
             id=c.id,
@@ -42,7 +42,7 @@ def get_client(client_id: int, db: Session = Depends(get_db)):
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
 
-    flags = compute_urgency(client, client.portfolio, client.goals, client.life_events)
+    flags = compute_urgency(client, client.portfolio, client.goals, client.life_events, client.interactions)
     return Client360(
         id=client.id,
         name=client.name,
@@ -113,7 +113,7 @@ def update_client(client_id: int, payload: ClientUpdate, db: Session = Depends(g
     db.commit()
     db.refresh(client)
 
-    flags = compute_urgency(client, client.portfolio, client.goals, client.life_events)
+    flags = compute_urgency(client, client.portfolio, client.goals, client.life_events, client.interactions)
     return Client360(
         id=client.id,
         name=client.name,
@@ -193,7 +193,7 @@ def create_portfolio(client_id: int, payload: PortfolioCreate, db: Session = Dep
     db.commit()
     db.refresh(client)
 
-    flags = compute_urgency(client, client.portfolio, client.goals, client.life_events)
+    flags = compute_urgency(client, client.portfolio, client.goals, client.life_events, client.interactions)
     return Client360(
         id=client.id,
         name=client.name,

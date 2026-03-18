@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from sqlalchemy import text
 
 from .database import engine, Base
-from .routers import clients, copilot, briefing, situation, meeting_prep
+from .routers import clients, copilot, briefing, situation, meeting_prep, interactions
 
 load_dotenv()
 
@@ -33,7 +33,7 @@ def _run_migrations():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=engine)  # creates new tables (client_interactions) automatically
     _run_migrations()
     yield
 
@@ -59,6 +59,7 @@ app.include_router(copilot.router)
 app.include_router(briefing.router)
 app.include_router(situation.router)
 app.include_router(meeting_prep.router)
+app.include_router(interactions.router)
 
 
 @app.get("/health")

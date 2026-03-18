@@ -27,6 +27,7 @@ class Client(Base):
     goals = relationship("Goal", back_populates="client")
     life_events = relationship("LifeEvent", back_populates="client")
     audit_logs = relationship("AuditLog", back_populates="client")
+    interactions = relationship("ClientInteraction", back_populates="client", order_by="ClientInteraction.interaction_date.desc()")
 
 
 class Portfolio(Base):
@@ -100,3 +101,21 @@ class AuditLog(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     client = relationship("Client", back_populates="audit_logs")
+
+
+class ClientInteraction(Base):
+    __tablename__ = "client_interactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    interaction_type = Column(String, nullable=False)  # "call" | "email" | "meeting" | "follow_up"
+    interaction_date = Column(Date, nullable=False)
+    duration_minutes = Column(Integer, nullable=True)   # calls/meetings only
+    subject = Column(String, nullable=False)
+    notes = Column(Text, nullable=True)
+    outcome = Column(String, nullable=True)             # e.g. "Agreed to rebalance", "Sent proposal"
+    next_action = Column(String, nullable=True)
+    next_action_due = Column(Date, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    client = relationship("Client", back_populates="interactions")

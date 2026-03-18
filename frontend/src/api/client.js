@@ -38,6 +38,15 @@ export const createPortfolio = (id, data) =>
 export const createGoal = (id, data) =>
   api.post(`/clients/${id}/goals`, data).then(r => r.data)
 
+export const getInteractions = (id) =>
+  api.get(`/clients/${id}/interactions`).then(r => r.data)
+
+export const createInteraction = (id, data) =>
+  api.post(`/clients/${id}/interactions`, data).then(r => r.data)
+
+export const deleteInteraction = (clientId, interactionId) =>
+  api.delete(`/clients/${clientId}/interactions/${interactionId}`)
+
 export const fmt = {
   inr: (v) => {
     if (!v && v !== 0) return '—'

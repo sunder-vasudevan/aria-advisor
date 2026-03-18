@@ -222,6 +222,35 @@ class BriefingResponse(BaseModel):
     overall_narrative: str  # AI-generated morning brief
 
 
+# ─── Client Interaction ──────────────────────────────────────────────────────
+
+class InteractionCreate(BaseModel):
+    interaction_type: str              # "call" | "email" | "meeting" | "follow_up"
+    interaction_date: date
+    duration_minutes: Optional[int] = None
+    subject: str
+    notes: Optional[str] = None
+    outcome: Optional[str] = None
+    next_action: Optional[str] = None
+    next_action_due: Optional[date] = None
+
+
+class InteractionOut(BaseModel):
+    id: int
+    interaction_type: str
+    interaction_date: date
+    duration_minutes: Optional[int]
+    subject: str
+    notes: Optional[str]
+    outcome: Optional[str]
+    next_action: Optional[str]
+    next_action_due: Optional[date]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # ─── Meeting Prep Card ────────────────────────────────────────────────────────
 
 class MeetingPrepCard(BaseModel):

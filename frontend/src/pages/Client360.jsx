@@ -8,6 +8,7 @@ import GoalsPanel from '../components/GoalsPanel'
 import CopilotChat from '../components/CopilotChat'
 import SituationSummary from '../components/SituationSummary'
 import MeetingPrepPanel from '../components/MeetingPrepPanel'
+import InteractionsPanel from '../components/InteractionsPanel'
 import { fmt } from '../api/client'
 
 function UrgencyBadge({ flag }) {
@@ -106,11 +107,13 @@ export default function Client360() {
     { key: 'portfolio', label: 'Portfolio & Holdings' },
     { key: 'goals', label: `Goals (${client.goals.length})` },
     { key: 'events', label: `Life Events (${client.life_events.length})` },
+    { key: 'interactions', label: 'Interactions' },
   ]
   const mobileTabs = [
     { key: 'portfolio', label: 'Portfolio' },
     { key: 'goals', label: `Goals` },
     { key: 'events', label: 'Life Events' },
+    { key: 'interactions', label: 'Interactions' },
     { key: 'info', label: 'Client Info' },
     { key: 'copilot', label: 'AI Copilot' },
   ]
@@ -332,6 +335,10 @@ export default function Client360() {
                 client.life_events.map(e => <LifeEventTag key={e.id} event={e} />)
               )}
             </div>
+          )}
+
+          {activeTab === 'interactions' && (
+            <InteractionsPanel clientId={id} />
           )}
 
           {/* Mobile-only: Client Info tab */}

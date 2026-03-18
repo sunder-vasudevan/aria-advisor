@@ -6,7 +6,7 @@ from typing import List
 from .schemas import UrgencyFlag
 
 
-def compute_urgency(client, portfolio, goals, life_events) -> List[UrgencyFlag]:
+def compute_urgency(client, portfolio, goals, life_events, interactions=None) -> List[UrgencyFlag]:
     flags: List[UrgencyFlag] = []
     today = date.today()
 
@@ -56,6 +56,17 @@ def compute_urgency(client, portfolio, goals, life_events) -> List[UrgencyFlag]:
                 label=f"Life Event — {label}",
                 severity="medium"
             ))
+
+    # ── Overdue follow-ups ────────────────────────────────────────────────────
+    if interactions:
+        for interaction in interactions:
+            if interaction.next_action and interaction.next_action_due:
+                days_overdue = (today - interaction.next_action_due).days
+                if days_overdue > 0:
+                    flags.append(UrgencyFlag(
+                        label=f"Overdue Follow-up — {interaction.next_action} ({days_overdue}d overdue)",
+                        severity="high" if days_overdue > 3 else "medium"
+                    ))
 
     return flags
 
