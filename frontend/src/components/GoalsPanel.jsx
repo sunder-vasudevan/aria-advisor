@@ -175,7 +175,7 @@ export default function GoalsPanel({ clientId, goals, onGoalsChange }) {
   }
 
   const handleSaveEdit = async (form) => {
-    if (!form.goal_name?.trim() || !form.target_amount || !form.target_date) {
+    if (!form.goal_name?.trim() || !form.target_amount || Number(form.target_amount) <= 0 || !form.target_date) {
       setFormError('Goal name, target amount, and target date are required.')
       return
     }
@@ -197,8 +197,12 @@ export default function GoalsPanel({ clientId, goals, onGoalsChange }) {
   }
 
   const handleSaveNew = async (form) => {
-    if (!form.goal_name?.trim() || !form.target_amount || !form.target_date) {
-      setFormError('Goal name, target amount, and target date are required.')
+    const missing = []
+    if (!form.goal_name?.trim()) missing.push('goal name')
+    if (!form.target_amount || Number(form.target_amount) <= 0) missing.push(`amount(${form.target_amount})`)
+    if (!form.target_date) missing.push(`date(${form.target_date})`)
+    if (missing.length) {
+      setFormError(`Required: ${missing.join(', ')}`)
       return
     }
     setFormSaving(true); setFormError(null)
