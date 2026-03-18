@@ -55,3 +55,33 @@
 **Alternatives considered:** Full CBS replacement (out of scope), deep CBS integration
 **Reasoning:** Banks won't rip-and-replace CBS; middleware positioning removes the biggest sales blocker and is deployable without touching core systems
 **Trade-offs / known debt:** ARIA depends on data quality from upstream CBS; mock data used for v1 demo
+
+---
+
+### [DECISION-010] — Safari date input: month/year selects
+**Date:** 2026-03-18
+**Version / Phase:** Session 9 — bug fix
+**Decision:** Replace all `<input type="date">` with month/year `<select>` dropdowns in GoalsPanel (and any future forms)
+**Alternatives considered:** `onChange` only, adding `onInput` handler
+**Reasoning:** WebKit (Safari) doesn't reliably fire React `onChange` on date inputs. `onInput` also inconsistent. Selects work universally across all browsers.
+**Trade-offs / known debt:** Slightly more verbose JSX; accepted as the permanent pattern for this codebase
+
+---
+
+### [DECISION-011] — FastAPI 204 delete routes: always explicit Response
+**Date:** 2026-03-18
+**Version / Phase:** Session 9 — bug fix
+**Decision:** Delete routes must return `Response(status_code=204)` explicitly, never rely on implicit `None` with `@router.delete(status_code=204)`
+**Alternatives considered:** Returning `{"detail": "deleted"}` with 200
+**Reasoning:** FastAPI + ASGI raises a plain-text 500 when a 204 route returns `None` without an explicit Response object. The decorator alone is not sufficient.
+**Trade-offs / known debt:** None
+
+---
+
+### [DECISION-012] — Brand naming locked
+**Date:** 2026-03-18
+**Version / Phase:** Brand identity
+**Decision:** A-RiA (advisor product) vs ARIA (personal product). Taglines: "Real Intelligence for Every Client" / "Your Money Intelligence!". Footer: "Made with ❤️ in Hyderabad" on all apps.
+**Alternatives considered:** Unified branding, all-caps ARIA everywhere
+**Reasoning:** Differentiated capitalization signals the audience split: professional/advisor vs. consumer. Consistent footer is a brand signature.
+**Trade-offs / known debt:** Two separate logo components (ARiALogo / ARIALogo) to maintain

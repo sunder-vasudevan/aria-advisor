@@ -139,3 +139,13 @@
 
 ## Open Flags
 - FEAT-503 (live goal sliders) → FEAT-301 (book-level copilot) — next up
+
+## What Shipped This Session (2026-03-18 — Session 9 / Bug + Brand)
+- **Goal save/delete 500 errors fixed** ✅ — NameError on `models.Goal` in clients.py; explicit `Response(status_code=204)` for delete routes
+- **Safari date input fixed** ✅ — month/year `<select>` dropdowns replace `<input type="date">` in GoalsPanel (new goal form)
+- **Login pages redesigned — both apps** ✅ — split layout: dark navy gradient left panel, slate-50 right panel; taglines at text-4xl font-bold text-blue-300
+- **ARiALogo / ARIALogo components** ✅ — round dot on dotless ı, brand blue `#1D6FDB` dash (A-RiA) and dot; inline text flow (no flex wrapper)
+- **Design system proposal** ✅ — brand blue `#1D6FDB`, probability pills, HTML preview page generated
+- **ARIA Whitepaper** ✅ — ARIA_WHITEPAPER.md + ARIA_Whitepaper.docx (116KB) + ARIA_Executive_Deck.pptx (12 slides, 143KB)
+- **PRD**: FEAT-503 + FEAT-504 marked ✅
+- Commit: `49ec7e7`
