@@ -7,7 +7,7 @@ from ..database import get_db
 from ..models import Client, Portfolio, Holding, Goal, LifeEvent
 from ..schemas import ClientListItem, Client360, HoldingOut, GoalOut, UrgencyFlag, GoalProjection, ClientCreate, ClientUpdate, PortfolioCreate, GoalCreate, GoalUpdate, LifeEventOut, LifeEventCreate, LifeEventUpdate, derive_risk_category
 from ..urgency import compute_urgency, urgency_score
-from ..simulation import monte_carlo_goal_probability
+from ..simulation import monte_carlo_goal_probability, find_required_sip
 
 router = APIRouter(prefix="/clients", tags=["clients"])
 
@@ -222,7 +222,7 @@ def create_goal(client_id: int, payload: GoalCreate, db: Session = Depends(get_d
         raise HTTPException(status_code=404, detail="Client not found")
 
     portfolio_value = client.portfolio.total_value if client.portfolio else 0
-    probability = monte_carlo_goal_probability(
+    sim = monte_carlo_goal_probability(
         current_value=portfolio_value,
         monthly_sip=payload.monthly_sip,
         target_amount=payload.target_amount,
@@ -235,7 +235,7 @@ def create_goal(client_id: int, payload: GoalCreate, db: Session = Depends(get_d
         target_amount=payload.target_amount,
         target_date=payload.target_date,
         monthly_sip=payload.monthly_sip,
-        probability_pct=probability,
+        probability_pct=sim["probability_pct"],
     )
     db.add(goal)
     db.commit()
@@ -258,7 +258,7 @@ def update_goal(client_id: int, goal_id: int, payload: GoalUpdate, db: Session =
         monthly_sip=goal.monthly_sip,
         target_amount=goal.target_amount,
         target_date=goal.target_date,
-    )
+    )["probability_pct"]
     db.commit()
     db.refresh(goal)
     return goal
@@ -314,6 +314,7 @@ def get_goal_projection(
     sip_delta: float = Query(default=0, description="Monthly SIP adjustment in INR (e.g. 10000 = +₹10k/month)"),
     return_rate: float = Query(default=0.12, description="Assumed annual return rate (e.g. 0.12 = 12%)"),
     years_delta: float = Query(default=0, description="Shift in goal timeline in years (e.g. 1 = one year later)"),
+    inflation_rate: float = Query(default=0.06, description="Annual inflation rate (e.g. 0.06 = 6%)"),
     db: Session = Depends(get_db),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
@@ -335,24 +336,38 @@ def get_goal_projection(
         today = date.today()
         years_remaining = (adjusted_date - today).days / 365.25
 
-        projected_prob = monte_carlo_goal_probability(
+        sim = monte_carlo_goal_probability(
             current_value=portfolio_value,
             monthly_sip=max(adjusted_sip, 0),
             target_amount=goal.target_amount,
             target_date=adjusted_date,
             annual_return_rate=return_rate,
+            inflation_rate=inflation_rate,
+        )
+
+        req_sip = find_required_sip(
+            current_value=portfolio_value,
+            target_amount=goal.target_amount,
+            target_date=adjusted_date,
+            annual_return_rate=return_rate,
+            inflation_rate=inflation_rate,
         )
 
         results.append(GoalProjection(
             goal_id=goal.id,
             goal_name=goal.goal_name,
             target_amount=goal.target_amount,
+            real_target=sim["real_target"],
             target_date=adjusted_date,
             base_probability_pct=goal.probability_pct,
-            projected_probability_pct=projected_prob,
+            projected_probability_pct=sim["probability_pct"],
             monthly_sip=max(adjusted_sip, 0),
             assumed_return_rate=return_rate,
+            inflation_rate=inflation_rate,
             years_to_goal=round(max(years_remaining, 0), 1),
+            median_corpus=sim["median_corpus"],
+            median_corpus_real=sim["median_corpus_real"],
+            required_sip=req_sip,
         ))
 
     return results

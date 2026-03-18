@@ -69,8 +69,23 @@ Use the **Print** button to save/print the card before a client meeting.
 
 > Requires `ANTHROPIC_API_KEY` to be set in the backend environment.
 
-### 7. Goal Projection
-In the Goals tab, click any goal to see a Monte Carlo probability estimate. Adjust the monthly SIP amount to see how it affects the probability of reaching the target.
+### 7. What-if Goal Scenario (v2)
+
+In the Goals tab, expand the **What-if Scenario** panel to model how changes affect goal success. The simulation runs automatically as you adjust sliders (500ms debounce). All probabilities are **inflation-adjusted** — the target is inflated to its future value before the simulation runs.
+
+**Mode 1 — Will I achieve it?**
+- Adjust monthly SIP delta (±₹50k), assumed return (6–18%), timeline shift (-2 to +5 years), and inflation rate (3–10%)
+- Each goal card shows:
+  - Projected probability (with +/- delta vs base)
+  - Target in today's ₹ vs inflation-adjusted future value
+  - Median projected corpus in both future ₹ and today's ₹ (deflated)
+
+**Mode 2 — What SIP do I need?**
+- Shows the monthly SIP required to achieve **80% probability** of reaching each goal
+- Compares required SIP vs current SIP and shows the gap (or surplus)
+- Adjust return rate and inflation to see how the required SIP changes
+
+> **How it works:** 1,000 Monte Carlo paths are run per goal. Each path simulates monthly portfolio growth with random return variation (±5% annualised volatility) around the assumed rate, compounding SIP contributions. The target is inflated using compound inflation before counting successes.
 
 ### 8. Client Portal
 Clients can log in at `/client-portal/login` to view a read-only summary of their own portfolio and goals. No sensitive advisor data is exposed.
