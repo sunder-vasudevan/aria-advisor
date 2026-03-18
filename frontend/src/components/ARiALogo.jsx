@@ -1,9 +1,10 @@
-// A-RiA brand name with a round dot on the lowercase i
-// Uses dotless-i (ı) + an absolutely positioned circle so the dot is always perfectly round
+// A-RiA brand name: dash and round dot on i in brand blue
 export default function ARiALogo({ className = '', style = {} }) {
   return (
     <span className={className} style={{ display: 'inline-flex', alignItems: 'baseline', ...style }}>
-      {'A-R'}
+      {'A'}
+      <span style={{ color: '#1D6FDB' }}>{'-'}</span>
+      {'R'}
       <span style={{ position: 'relative', display: 'inline-block', lineHeight: 'inherit' }}>
         ı
         <span style={{
@@ -14,7 +15,7 @@ export default function ARiALogo({ className = '', style = {} }) {
           width: '0.2em',
           height: '0.2em',
           borderRadius: '50%',
-          background: 'currentColor',
+          background: '#1D6FDB',
           display: 'block',
           pointerEvents: 'none',
         }} />
