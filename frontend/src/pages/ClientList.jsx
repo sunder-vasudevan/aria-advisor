@@ -35,7 +35,7 @@ export default function ClientList() {
   const [briefingLoading, setBriefingLoading] = useState(false)
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
-  const [viewMode, setViewMode] = useState('list') // 'list' | 'grouped'
+  const [viewMode, setViewMode] = useState('grouped') // 'list' | 'grouped'
   const session = getAdvisorSession()
 
   useEffect(() => {
