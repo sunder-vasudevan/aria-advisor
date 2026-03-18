@@ -110,6 +110,7 @@ export default function GoalsPanel({ clientId, goals, onGoalsChange }) {
 
   const [editingGoalId, setEditingGoalId] = useState(null)
   const [addingGoal, setAddingGoal] = useState(false)
+  const [newGoalForm, setNewGoalForm] = useState({ goal_name: '', target_amount: '', target_date: '', monthly_sip: '' })
   const [formSaving, setFormSaving] = useState(false)
   const [formError, setFormError] = useState(null)
   const [pendingDeleteId, setPendingDeleteId] = useState(null)
@@ -196,13 +197,10 @@ export default function GoalsPanel({ clientId, goals, onGoalsChange }) {
     }
   }
 
-  const handleSaveNew = async (form) => {
-    const missing = []
-    if (!form.goal_name?.trim()) missing.push('goal name')
-    if (!form.target_amount || Number(form.target_amount) <= 0) missing.push(`amount(${form.target_amount})`)
-    if (!form.target_date) missing.push(`date(${form.target_date})`)
-    if (missing.length) {
-      setFormError(`Required: ${missing.join(', ')}`)
+  const handleSaveNew = async () => {
+    const form = newGoalForm
+    if (!form.goal_name?.trim() || !form.target_amount || Number(form.target_amount) <= 0 || !form.target_date) {
+      setFormError('Goal name, target amount, and target date are required.')
       return
     }
     setFormSaving(true); setFormError(null)
@@ -214,6 +212,7 @@ export default function GoalsPanel({ clientId, goals, onGoalsChange }) {
         monthly_sip: Number(form.monthly_sip) || 0,
       })
       setAddingGoal(false)
+      setNewGoalForm({ goal_name: '', target_amount: '', target_date: '', monthly_sip: '' })
       onGoalsChange?.()
     } catch {
       setFormError('Failed to add goal.')
@@ -536,13 +535,45 @@ export default function GoalsPanel({ clientId, goals, onGoalsChange }) {
       {addingGoal && (
         <div className="bg-white rounded-2xl border border-dashed border-navy-300 shadow-card p-4">
           <div className="text-sm font-semibold text-gray-700 mb-1">New Goal</div>
-          <GoalForm
-            initial={null}
-            onSave={handleSaveNew}
-            onCancel={() => { setAddingGoal(false); setFormError(null) }}
-            saving={formSaving}
-            error={formError}
-          />
+          <div className="border-t border-gray-100 mt-3 pt-3 space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Goal Name *</label>
+              <input type="text" value={newGoalForm.goal_name}
+                onChange={e => setNewGoalForm(f => ({ ...f, goal_name: e.target.value }))}
+                placeholder="e.g. Child's Education" className={INPUT_CLS} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Target Amount (₹) *</label>
+                <input type="number" min="0" value={newGoalForm.target_amount}
+                  onChange={e => setNewGoalForm(f => ({ ...f, target_amount: e.target.value }))}
+                  placeholder="e.g. 5000000" className={INPUT_CLS} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Target Date *</label>
+                <input type="date" value={newGoalForm.target_date}
+                  onChange={e => setNewGoalForm(f => ({ ...f, target_date: e.target.value }))}
+                  className={INPUT_CLS} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Monthly SIP (₹)</label>
+              <input type="number" min="0" value={newGoalForm.monthly_sip}
+                onChange={e => setNewGoalForm(f => ({ ...f, monthly_sip: e.target.value }))}
+                placeholder="e.g. 25000" className={INPUT_CLS} />
+            </div>
+            {formError && <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{formError}</div>}
+            <div className="flex gap-2">
+              <button type="button" onClick={() => { setAddingGoal(false); setFormError(null); setNewGoalForm({ goal_name: '', target_amount: '', target_date: '', monthly_sip: '' }) }}
+                className="flex-1 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button type="button" disabled={formSaving} onClick={handleSaveNew}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-navy-950 text-white rounded-lg text-sm font-semibold hover:bg-navy-800 disabled:opacity-60 transition-colors">
+                {formSaving ? <><Loader2 size={13} className="animate-spin" />Saving…</> : 'Save Goal'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
