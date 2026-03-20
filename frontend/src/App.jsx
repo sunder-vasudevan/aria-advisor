@@ -5,6 +5,7 @@ import ClientForm from './pages/ClientForm'
 import AdvisorLogin from './pages/AdvisorLogin'
 import ClientLogin from './pages/ClientLogin'
 import ClientPortal from './pages/ClientPortal'
+import HelpPage from './pages/HelpPage'
 import RequireAdvisorAuth from './components/RequireAdvisorAuth'
 import RequireClientAuth from './components/RequireClientAuth'
 
@@ -28,6 +29,9 @@ export default function App() {
         } />
         <Route path="/clients/:id/edit" element={
           <RequireAdvisorAuth><ClientForm /></RequireAdvisorAuth>
+        } />
+        <Route path="/help" element={
+          <RequireAdvisorAuth><HelpPage /></RequireAdvisorAuth>
         } />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

@@ -1,7 +1,7 @@
 import ARiALogo from '../components/ARiALogo'
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, TrendingUp, ChevronRight, ChevronDown, RefreshCw, Bell, CheckCircle, UserPlus, LayoutList, Layers } from 'lucide-react'
+import { AlertTriangle, TrendingUp, ChevronRight, ChevronDown, RefreshCw, Bell, CheckCircle, UserPlus, LayoutList, Layers, HelpCircle } from 'lucide-react'
 import { getClients, getBriefing, getClient, fmt } from '../api/client'
 import { getAdvisorSession, advisorLogout } from '../auth'
 
@@ -126,6 +126,13 @@ export default function ClientList() {
           <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-navy-800 text-white text-sm font-medium">
             <TrendingUp size={16} />
             Client Book
+          </button>
+          <button
+            onClick={() => navigate('/help')}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-navy-300 hover:bg-navy-800 hover:text-white text-sm font-medium transition-colors mt-0.5"
+          >
+            <HelpCircle size={16} />
+            Help
           </button>
         </nav>
         <div className="p-4 border-t border-navy-800">
