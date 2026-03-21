@@ -1,4 +1,7 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
+
+logger = logging.getLogger(__name__)
 from pydantic import BaseModel
 from typing import Optional
 from sqlalchemy.orm import Session
@@ -72,22 +75,35 @@ def _link_client_by_name(display_name: str, advisor_id: int, personal_user_id: i
         if row:
             # Existing advisor-added client — link and mark portal active
             db.execute(
-                text("UPDATE clients SET personal_user_id = :puid, source = 'portal' WHERE id = :cid"),
+                text("UPDATE clients SET personal_user_id = :puid WHERE id = :cid"),
                 {"puid": personal_user_id, "cid": row[0]},
             )
+            # Best-effort: set source if column exists
+            try:
+                db.execute(text("UPDATE clients SET source = 'portal' WHERE id = :cid"), {"cid": row[0]})
+            except Exception:
+                pass
         else:
             # No existing record — create a new client row sourced from portal
             db.execute(
                 text("""
-                    INSERT INTO clients (name, age, segment, risk_score, risk_category, advisor_id, personal_user_id, source)
-                    VALUES (:name, 0, 'Retail', 5, 'Moderate', :aid, :puid, 'portal')
+                    INSERT INTO clients (name, age, segment, risk_score, risk_category, advisor_id, personal_user_id)
+                    VALUES (:name, 0, 'Retail', 5, 'Moderate', :aid, :puid)
                 """),
                 {"name": display_name.strip(), "aid": advisor_id, "puid": personal_user_id},
             )
+            # Best-effort: set source if column exists
+            try:
+                db.execute(
+                    text("UPDATE clients SET source = 'portal' WHERE advisor_id = :aid AND personal_user_id = :puid"),
+                    {"aid": advisor_id, "puid": personal_user_id},
+                )
+            except Exception:
+                pass
         db.commit()
         return True
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error("_link_client_by_name failed: %s", e)
     return False
 
 
