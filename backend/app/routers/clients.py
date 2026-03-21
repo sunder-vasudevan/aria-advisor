@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Header
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from datetime import date, timedelta
 
 from ..database import get_db
@@ -13,8 +13,16 @@ router = APIRouter(prefix="/clients", tags=["clients"])
 
 
 @router.get("", response_model=List[ClientListItem])
-def list_clients(db: Session = Depends(get_db)):
-    clients = db.query(Client).all()
+def list_clients(
+    db: Session = Depends(get_db),
+    x_advisor_id: Optional[int] = Header(default=None),
+    x_advisor_role: Optional[str] = Header(default=None),
+):
+    # Superadmin sees all clients; advisor sees only their own; no header = all (fallback)
+    if x_advisor_id and x_advisor_role != "superadmin":
+        clients = db.query(Client).filter(Client.advisor_id == x_advisor_id).all()
+    else:
+        clients = db.query(Client).all()
     result = []
     for c in clients:
         portfolio = c.portfolio
@@ -59,7 +67,11 @@ def get_client(client_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=Client360, status_code=201)
-def create_client(payload: ClientCreate, db: Session = Depends(get_db)):
+def create_client(
+    payload: ClientCreate,
+    db: Session = Depends(get_db),
+    x_advisor_id: Optional[int] = Header(default=None),
+):
     client = Client(
         name=payload.name,
         age=payload.age,
@@ -73,6 +85,7 @@ def create_client(payload: ClientCreate, db: Session = Depends(get_db)):
         city=payload.city,
         pincode=payload.pincode,
         pan_number=payload.pan_number,
+        advisor_id=x_advisor_id,  # auto-assign to creating advisor
     )
     db.add(client)
     db.commit()

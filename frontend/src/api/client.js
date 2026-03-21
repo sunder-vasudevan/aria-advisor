@@ -4,6 +4,16 @@ const BASE = import.meta.env.VITE_API_URL || '/api'
 
 const api = axios.create({ baseURL: BASE })
 
+// Inject advisor identity on every request so the backend can filter by advisor
+api.interceptors.request.use(config => {
+  try {
+    const session = JSON.parse(localStorage.getItem('aria_advisor_session') || '{}')
+    if (session.advisor_id) config.headers['X-Advisor-Id'] = session.advisor_id
+    if (session.role) config.headers['X-Advisor-Role'] = session.role
+  } catch {}
+  return config
+})
+
 export const getApiClient = () => api
 
 export const getClients = () => api.get('/clients').then(r => r.data)
