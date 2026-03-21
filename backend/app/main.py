@@ -52,7 +52,7 @@ def _run_advisor_migrations():
 
 
 def _seed_advisors():
-    """Seed advisors if not already present. Idempotent."""
+    """Upsert demo advisors on every deploy — ensures password hashes stay in sync."""
     from .models import Advisor
     from .auth import get_password_hash
     db = SessionLocal()
@@ -90,6 +90,8 @@ def _seed_advisors():
             existing = db.query(Advisor).filter(Advisor.username == data["username"]).first()
             if not existing:
                 db.add(Advisor(**data))
+            else:
+                existing.hashed_password = data["hashed_password"]
         db.commit()
     finally:
         db.close()
