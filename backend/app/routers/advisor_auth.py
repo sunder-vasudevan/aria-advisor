@@ -63,6 +63,25 @@ def list_advisors(db: Session = Depends(get_db)):
     return db.query(Advisor).filter(Advisor.is_active == True).all()
 
 
+@router.post("/debug-login")
+def debug_login(payload: AdvisorLoginRequest, db: Session = Depends(get_db)):
+    """Temporary: echo what the login endpoint actually receives."""
+    advisor = db.query(Advisor).filter(
+        Advisor.username == payload.username,
+        Advisor.is_active == True,
+    ).first()
+    found = advisor is not None
+    pw_ok = verify_password(payload.password, advisor.hashed_password) if advisor else None
+    return {
+        "received_username": payload.username,
+        "received_password": payload.password,
+        "username_len": len(payload.username),
+        "password_len": len(payload.password),
+        "advisor_found": found,
+        "password_ok": pw_ok,
+    }
+
+
 @router.get("/debug")
 def debug_auth(db: Session = Depends(get_db)):
     """Temporary: diagnose bcrypt verify on Render. Remove after fix confirmed."""
