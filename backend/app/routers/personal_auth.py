@@ -114,6 +114,49 @@ def get_me(current_user: PersonalUser = Depends(get_current_personal_user)):
     }
 
 
+class LinkAdvisorRequest(BaseModel):
+    referral_code: str
+
+
+@router.post("/link-advisor")
+def link_advisor(
+    payload: LinkAdvisorRequest,
+    current_user: PersonalUser = Depends(get_current_personal_user),
+    db: Session = Depends(get_db),
+):
+    """Allow an existing personal user to link themselves to an advisor via referral code."""
+    if current_user.advisor_id:
+        raise HTTPException(status_code=400, detail="Already linked to an advisor")
+
+    advisor = db.query(Advisor).filter(
+        Advisor.referral_code == payload.referral_code.upper(),
+        Advisor.is_active == True,
+    ).first()
+    if not advisor:
+        raise HTTPException(status_code=404, detail="Invalid advisor code")
+
+    current_user.advisor_id = advisor.id
+    db.commit()
+
+    # Also link matching client record by name
+    name_lower = current_user.display_name.lower()
+    clients = db.query(Client).filter(
+        Client.advisor_id == advisor.id,
+        Client.personal_user_id == None,
+    ).all()
+    matched = next((c for c in clients if c.name.lower() == name_lower), None)
+    if matched:
+        matched.personal_user_id = current_user.id
+        db.commit()
+
+    return {
+        "advisor_id": advisor.id,
+        "advisor_name": advisor.display_name,
+        "advisor_city": advisor.city,
+        "client_linked": matched is not None,
+    }
+
+
 @router.put("/profile")
 def update_profile(
     payload: dict,
