@@ -31,6 +31,7 @@ def list_clients(db: Session = Depends(get_db)):
             total_value=portfolio.total_value if portfolio else 0,
             urgency_flags=flags,
             urgency_score=score,
+            portal_active=c.personal_user_id is not None,
         ))
     result.sort(key=lambda x: x.urgency_score, reverse=True)
     return result

@@ -90,6 +90,7 @@ class ClientListItem(BaseModel):
     total_value: float
     urgency_flags: List[UrgencyFlag]
     urgency_score: int  # for sorting
+    portal_active: bool = False
 
     class Config:
         from_attributes = True

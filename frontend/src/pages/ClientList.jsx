@@ -1,7 +1,7 @@
 import ARiALogo from '../components/ARiALogo'
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, TrendingUp, ChevronRight, ChevronDown, RefreshCw, Bell, CheckCircle, UserPlus, LayoutList, Layers, HelpCircle, LogOut, Wifi } from 'lucide-react'
+import { AlertTriangle, TrendingUp, ChevronRight, ChevronDown, RefreshCw, Bell, CheckCircle, UserPlus, LayoutList, Layers, HelpCircle, LogOut, Wifi, Zap } from 'lucide-react'
 import { getClients, getBriefing, getClient, fmt } from '../api/client'
 import { getAdvisorSession, advisorLogout } from '../auth'
 
@@ -40,6 +40,14 @@ function ProbabilityPill({ urgencyScore }) {
   )
 }
 
+function PortalBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+      <Zap size={10} className="fill-emerald-500" /> Portal
+    </span>
+  )
+}
+
 function Avatar({ name }) {
   const initials = name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
   return (
@@ -74,8 +82,19 @@ export default function ClientList() {
   }
 
   useEffect(() => {
+    const cached = sessionStorage.getItem('aria_clients')
+    if (cached) {
+      try {
+        setClients(JSON.parse(cached))
+        setLoading(false)
+      } catch {}
+    }
     getClients()
-      .then(data => setClients(Array.isArray(data) ? data : []))
+      .then(data => {
+        const list = Array.isArray(data) ? data : []
+        setClients(list)
+        sessionStorage.setItem('aria_clients', JSON.stringify(list))
+      })
       .catch(() => setError('Failed to load clients'))
       .finally(() => setLoading(false))
   }, [])
@@ -383,6 +402,7 @@ function ClientCard({ client, navigate, onMouseEnter }) {
       </div>
       <div className="mt-2.5 flex flex-wrap gap-1">
         <ProbabilityPill urgencyScore={client.urgency_score} />
+        {client.portal_active && <PortalBadge />}
         {client.urgency_flags.slice(0, 1).map((f, i) => <UrgencyBadge key={i} flag={f} />)}
         {client.urgency_flags.length > 1 && (
           <span className="text-xs text-gray-500 self-center">+{client.urgency_flags.length - 1} more</span>
@@ -430,7 +450,10 @@ function ClientTable({ clients, navigate, onPrefetch }) {
               <div className="font-semibold text-gray-900">{fmt.inr(client.total_value)}</div>
             </td>
             <td className="px-6 py-4">
-              <ProbabilityPill urgencyScore={client.urgency_score} />
+              <div className="flex items-center gap-1.5">
+                <ProbabilityPill urgencyScore={client.urgency_score} />
+                {client.portal_active && <PortalBadge />}
+              </div>
             </td>
             <td className="px-6 py-4">
               <div className="flex flex-wrap gap-1">
