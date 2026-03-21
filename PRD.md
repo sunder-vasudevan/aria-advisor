@@ -257,6 +257,11 @@ Priority order:
 | FEAT-108 | Add portfolio + holdings | ✅ Complete | Full portfolio creation with fund-level data |
 | FEAT-109 | Add goals | ✅ Complete | Goals with Monte Carlo probability on save |
 | FEAT-503 | Live goal probability recalculation | Completes the what-if flow | WF is static — this is real-time |
+| FEAT-901 | Multi-advisor support + referral codes | ✅ Complete | Advisor table, login, seeded codes (RAHUL01/HAMZA01/SUNNY01) |
+| FEAT-902 | ARIA Personal portal + client linking | ✅ Complete | personal_users table, register/login, referral code link, personal_user_id on Client |
+| FEAT-903 | Advisor profile self-edit | ✅ Complete | PUT /advisor/me — display_name, city, region |
+| FEAT-904 | Direct portal client auto-create + source flag | ✅ Complete | Auto-creates client row on registration if no name match; violet Direct badge |
+| FEAT-905 | Full advisor details on Personal profile | ✅ Complete | /me enriched — advisor object with name, city, region, referral, rating |
 | FEAT-301 | Book-level copilot questions | Second biggest USP | WF literally cannot do this |
 | FEAT-302 | Formal recommendation cards | Makes RM workflow real | WF has no AI rationale in workflow |
 | FEAT-201 | Live NAV fetch (MFAPI.in) | Makes data feel real | Free API, no auth |

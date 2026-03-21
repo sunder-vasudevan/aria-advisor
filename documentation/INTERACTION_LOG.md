@@ -57,3 +57,33 @@ ARIA Personal → Vercel deploy. Then `/help` page in both apps.
 | 20 | Make whitepaper for both apps | Ran background agent — generated MD + DOCX + PPTX |
 | 21 | Don't wait for permission | Noted autonomy feedback; acknowledged |
 | 22 | Wrap ARIA and session | Completed commit, session file, interaction log |
+
+## Session 12 — 2026-03-21 ~19:00 — Production Outage RCA
+
+| # | Prompt (summary) | Output summary | Time |
+|---|-----------------|----------------|------|
+| 1 | a-ria.vercel.app not loading | Investigated — identified login 401 and client list failure | ~19:03 |
+| 2 | 703PM (session start time) | Logged session start | ~19:03 |
+| 3 | Failed to load clients for rahul and hamza | Traced to /clients 500 error; began RCA | ~19:10 |
+| 4 | Fix the seed to upsert. How does it differ from no-op commit? | Explained upsert vs skip-if-exists; proposed fix | ~19:20 |
+| 5 | Yes (approve upsert fix) | Implemented seeder upsert in main.py | ~19:22 |
+| 6 | Yes (approve debug endpoint) | Added /advisor/debug endpoint | ~19:30 |
+| 7 | Yes (approve .is_(True) fix) | Fixed Advisor.is_active boolean filter | ~19:40 |
+| 8 | Yes (approve CORS fix) | Hardcoded Vercel origins in CORS | ~19:50 |
+| 9 | After fixing — do a root cause analysis | Wrote RCA-2026-03-21-login-failure.md | ~20:00 |
+| 10 | Document this as learning, refer back as required | Saved feedback_python314_sqlalchemy.md to memory | ~20:10 |
+| 11 | Trace back where and why this issue triggered | Began deep-dive causal chain analysis | ~20:20 |
+| 12 | Run on autonomous. Fix issue, do deep dive RCA as pointed. Document. | Ran autonomous — wrote deep-dive RCA, pinned runtime.txt, pushed all commits | ~20:30 |
+
+## Session 13 — 2026-03-21 ~21:00 — Advisor Profile + Portal Client Features
+
+| # | Prompt (summary) | Output summary | Time |
+|---|-----------------|----------------|------|
+| 1 | Explain advisor sends ARIA Personal link / unassigned clients / notifications / advisor discovery / accept-reject | Full logic audit of all 5 flows — documented current state + gaps | ~21:05 |
+| 2 | Park 1-5 for next session. Fix advisor connected. | Fixed AdvisorCard to show full advisor details | ~21:10 |
+| 3 | Yes (approve advisor card + /me fix) | Enriched /me to return full advisor object; updated AdvisorCard | ~21:20 |
+| 4 | Show advisor name, city and all info. Need profile page for advisor. | Proposed advisor profile page + PUT /advisor/me endpoint | ~21:25 |
+| 5 | Yes (approve profile page + endpoint) | Built advisor profile page, PUT /advisor/me, updated Personal AdvisorCard | ~21:35 |
+| 6 | Added new user jaskirat with RAHUL01 — not showing in Rahul page | Diagnosed silent INSERT failure due to source column; fixed resilient auto-create | ~21:50 |
+| 7 | Yes (approve direct client + badge) | Added source column, Direct badge, auto-create, superadmin on login | ~22:00 |
+| 8 | Continue from where you left off | Completed all 5 changes — committed and deployed | ~22:05 |

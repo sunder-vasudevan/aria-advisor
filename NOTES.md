@@ -27,6 +27,49 @@
 - HELP.md — full feature guide and setup docs
 - PRD.md v1.1 — updated with WF benchmark, FEAT-308/309 added
 
+## ← START HERE NEXT SESSION
+**Parked features (pick one):**
+- Email invite flow — advisor sends ARIA Personal link to client via email (choose: Resend or SendGrid)
+- Superadmin view: collapsible advisor→clients tree, unassigned clients, assign client to advisor
+- Advisor discovery by location — /advisor/all backend ready, Personal frontend UI needed
+- Advisor accept/reject client requests — needs pending_requests table or status flag on Client
+
+---
+
+## What Shipped (2026-03-21 — Session 12)
+- **BUG: Production outage** — all advisors locked out, client list returning 500
+  - RC-1: `Advisor.is_active == True` → fixed to `.is_(True)` (Python 3.14 SQLAlchemy)
+  - RC-2: String-based `order_by` on `Client.interactions` relationship → removed entirely
+  - RC-3: `personal_user_id` in DB but not mapped as `Column()` in ORM → added
+  - RC-4: `FRONTEND_URL` env var missing on Render → hardcoded Vercel origins in CORS
+  - RC-5 (trigger): Render silently upgraded Python 3.11 → 3.14 → surfaced all latent bugs
+  - Fix: `runtime.txt` pinned to Python 3.11.9
+  - Fix: Seeder changed to upsert — always syncs hashed passwords on deploy
+  - RCA docs written to `docs/RCA-2026-03-21-login-failure.md` + deep-dive
+
+## What Shipped (2026-03-21 — Session 13)
+- **FEAT-903: Advisor self-edit profile page** — display_name, city, region; referral code read-only
+- **FEAT-905: Full advisor object on /me** — Personal profile card shows name, city, region, referral, rating
+- **FEAT-904: Direct portal client auto-create** — if no name match on registration, new Client row created with source='portal'
+- **Violet Direct badge** — clients sourced from portal flagged distinctly in advisor client list
+- **Source column migration** — `clients.source` VARCHAR DEFAULT 'advisor'
+- **Superadmin on login page** — sunny_hayes shown with purple Superadmin pill
+- **Fix: useAuth hydration** — login/register now calls getMe() after token set, so advisor object always populated
+
+---
+
+## 2026-03-20 ~14:00 — Design Review (no code shipped)
+- Reviewed new design direction (Material Design / blue palette) — applies to both Advisor and Personal
+- Key UI decisions confirmed for both apps:
+  - Help → `help_outline` icon button in header (top-right, beside notifications) — not in nav
+  - Mobile bottom nav: 4 core tabs only (no Help tab)
+  - ARIA Says / Advisor Insight card: dark gradient to signal AI layer
+  - Goals: progress bars, not just % number
+  - Asset allocation bars: target marker + deviation pill
+- V2 mockup approved in direction but too cluttered — V3 pass (whitespace, density) parked for next session
+- Light/dark toggle added to backlog
+- **Rule locked:** Any design change to one app → confirm with Sunny before applying to the other
+
 ## What Shipped This Session (2026-03-18 — Session 10 continued)
 - **FEAT-A: Add/Edit/Delete Goals** ✅
   - Backend: `PUT /clients/{id}/goals/{goal_id}` + `DELETE` — probability recalculated on edit
