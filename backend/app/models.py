@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Text, Boolean
+from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Text, Boolean, desc
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -52,7 +52,7 @@ class Client(Base):
     goals = relationship("Goal", back_populates="client")
     life_events = relationship("LifeEvent", back_populates="client")
     audit_logs = relationship("AuditLog", back_populates="client")
-    interactions = relationship("ClientInteraction", back_populates="client", order_by="ClientInteraction.interaction_date.desc()")
+    interactions = relationship("ClientInteraction", back_populates="client", order_by="ClientInteraction.interaction_date")
 
 
 class Portfolio(Base):
