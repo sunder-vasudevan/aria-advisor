@@ -169,6 +169,6 @@ app.include_router(personal_copilot.router)
 app.include_router(advisor_auth.router)
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health():
     return {"status": "ok", "service": "ria-advisor-api"}
