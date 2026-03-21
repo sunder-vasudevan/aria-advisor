@@ -136,6 +136,22 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 @router.get("/me")
 def get_me(current_user: PersonalUser = Depends(get_current_personal_user), db: Session = Depends(get_db)):
     advisor_id = _get_advisor_id_for_user(current_user.id, db)
+    advisor_info = None
+    if advisor_id:
+        row = db.execute(
+            text("SELECT id, display_name, city, region, referral_code, avg_rating, rating_count FROM advisors WHERE id = :id LIMIT 1"),
+            {"id": advisor_id},
+        ).fetchone()
+        if row:
+            advisor_info = {
+                "id": row[0],
+                "display_name": row[1],
+                "city": row[2],
+                "region": row[3],
+                "referral_code": row[4],
+                "avg_rating": row[5],
+                "rating_count": row[6],
+            }
     return {
         "id": current_user.id,
         "email": current_user.email,
@@ -143,6 +159,7 @@ def get_me(current_user: PersonalUser = Depends(get_current_personal_user), db: 
         "risk_score": current_user.risk_score,
         "risk_category": current_user.risk_category,
         "advisor_id": advisor_id,
+        "advisor": advisor_info,
         "created_at": current_user.created_at,
     }
 

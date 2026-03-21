@@ -74,6 +74,9 @@ export const updateLifeEvent = (clientId, eventId, data) =>
 export const deleteLifeEvent = (clientId, eventId) =>
   api.delete(`/clients/${clientId}/life-events/${eventId}`)
 
+export const updateAdvisorProfile = (data) =>
+  api.put('/advisor/me', data).then(r => r.data)
+
 export const fmt = {
   inr: (v) => {
     if (!v && v !== 0) return '—'

@@ -9,7 +9,8 @@ const ClientForm   = lazy(() => import('./pages/ClientForm'))
 const AdvisorLogin = lazy(() => import('./pages/AdvisorLogin'))
 const ClientLogin  = lazy(() => import('./pages/ClientLogin'))
 const ClientPortal = lazy(() => import('./pages/ClientPortal'))
-const HelpPage     = lazy(() => import('./pages/HelpPage'))
+const HelpPage           = lazy(() => import('./pages/HelpPage'))
+const AdvisorProfilePage = lazy(() => import('./pages/AdvisorProfilePage'))
 
 function PageLoader() {
   return (
@@ -43,6 +44,9 @@ export default function App() {
           } />
           <Route path="/help" element={
             <RequireAdvisorAuth><HelpPage /></RequireAdvisorAuth>
+          } />
+          <Route path="/profile" element={
+            <RequireAdvisorAuth><AdvisorProfilePage /></RequireAdvisorAuth>
           } />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

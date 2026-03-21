@@ -178,13 +178,19 @@ export default function ClientList() {
             <span className="hidden sm:inline">Add Client</span>
           </button>
           <div className="hidden md:flex items-center gap-2 pl-2 border-l border-gray-200">
-            <div className="w-7 h-7 rounded-full bg-blue-100 text-[#1D6FDB] flex items-center justify-center text-xs font-bold">
-              {(session?.displayName || 'R')[0]}
-            </div>
-            <div className="hidden lg:block">
-              <div className="text-xs font-medium text-gray-700 leading-tight">{session?.displayName}</div>
-              {session?.city && <div className="text-xs text-gray-400 leading-tight">{session.city}</div>}
-            </div>
+            <button
+              onClick={() => navigate('/profile')}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              title="Edit profile"
+            >
+              <div className="w-7 h-7 rounded-full bg-blue-100 text-[#1D6FDB] flex items-center justify-center text-xs font-bold">
+                {(session?.displayName || 'R')[0]}
+              </div>
+              <div className="hidden lg:block text-left">
+                <div className="text-xs font-medium text-gray-700 leading-tight">{session?.displayName}</div>
+                {session?.city && <div className="text-xs text-gray-400 leading-tight">{session.city}</div>}
+              </div>
+            </button>
             {session?.role === 'superadmin' && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-amber-400 text-amber-900 font-semibold leading-none">SUPER</span>
             )}
