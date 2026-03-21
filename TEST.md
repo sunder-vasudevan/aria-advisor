@@ -231,4 +231,5 @@
 
 | Date | Tester | App | Result | Notes |
 |------|--------|-----|--------|-------|
-| | | | | |
+| 2026-03-21 | Claude Code (auto) | A-RiA Advisor | 27✅ 1⚠️ 0❌ | C-14 Portal Active badge partial — portal not yet provisioned. All auth, bento hero, client book, mobile tests pass. |
+| 2026-03-21 | Claude Code (auto) | ARIA Personal | Smoke ✅ | Login (joshua2@aria.demo / demo1234), dashboard, frosted top bar, gradient hero, goals bento all render correctly. |
