@@ -9,7 +9,8 @@ from .database import engine, Base, SessionLocal
 from .routers import clients, copilot, briefing, situation, meeting_prep, interactions
 from .routers import personal_auth, personal_portfolio, personal_goals, personal_life_events, personal_copilot
 from .routers import advisor_auth
-from . import personal_models  # ensure personal tables registered with Base
+from . import models          # ensure advisors table registered before personal_models
+from . import personal_models  # personal_users.advisor_id FK references advisors.id
 
 load_dotenv()
 
