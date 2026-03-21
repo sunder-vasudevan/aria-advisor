@@ -91,6 +91,7 @@ class ClientListItem(BaseModel):
     urgency_flags: List[UrgencyFlag]
     urgency_score: int  # for sorting
     portal_active: bool = False
+    direct_signup: bool = False  # True = self-registered via Personal portal
 
     class Config:
         from_attributes = True

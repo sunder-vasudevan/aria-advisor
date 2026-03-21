@@ -40,6 +40,7 @@ def list_clients(
             urgency_flags=flags,
             urgency_score=score,
             portal_active=c.personal_user_id is not None,
+            direct_signup=c.source == "portal",
         ))
     result.sort(key=lambda x: x.urgency_score, reverse=True)
     return result

@@ -116,6 +116,14 @@ def _run_migrations():
             except Exception:
                 pass  # Column already exists
 
+    # FEAT-SOURCE: client source tracking
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE clients ADD COLUMN source VARCHAR DEFAULT 'advisor'"))
+            conn.commit()
+        except Exception:
+            pass  # Column already exists
+
     # FEAT-E: NAV fields on holdings
     holding_columns = [
         ("units_held", "FLOAT"),

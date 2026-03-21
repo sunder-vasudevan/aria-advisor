@@ -63,19 +63,29 @@ def _set_advisor_id(user_id: int, advisor_id: int, db: Session):
 
 
 def _link_client_by_name(display_name: str, advisor_id: int, personal_user_id: int, db: Session) -> bool:
-    """Find a client by name under this advisor and set personal_user_id. Returns True if matched."""
+    """Find existing client by name under advisor and link, or create a new portal client."""
     try:
         row = db.execute(
             text("SELECT id FROM clients WHERE advisor_id = :aid AND personal_user_id IS NULL AND LOWER(name) = LOWER(:name) LIMIT 1"),
             {"aid": advisor_id, "name": display_name.strip()},
         ).fetchone()
         if row:
+            # Existing advisor-added client — link and mark portal active
             db.execute(
-                text("UPDATE clients SET personal_user_id = :puid WHERE id = :cid"),
+                text("UPDATE clients SET personal_user_id = :puid, source = 'portal' WHERE id = :cid"),
                 {"puid": personal_user_id, "cid": row[0]},
             )
-            db.commit()
-            return True
+        else:
+            # No existing record — create a new client row sourced from portal
+            db.execute(
+                text("""
+                    INSERT INTO clients (name, age, segment, risk_score, risk_category, advisor_id, personal_user_id, source)
+                    VALUES (:name, 0, 'Retail', 5, 'Moderate', :aid, :puid, 'portal')
+                """),
+                {"name": display_name.strip(), "aid": advisor_id, "puid": personal_user_id},
+            )
+        db.commit()
+        return True
     except Exception:
         pass
     return False

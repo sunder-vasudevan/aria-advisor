@@ -114,17 +114,18 @@ export default function AdvisorLogin() {
           </form>
 
           <div className="mt-6 p-4 bg-white border border-gray-100 rounded-xl">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Demo advisors</div>
+            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Demo credentials</div>
             <div className="space-y-1.5">
               {[
-                { user: 'rm_demo', label: 'Rahul · Hyderabad' },
-                { user: 'hamza',   label: 'Hamza · Lyari' },
-              ].map(({ user, label }) => (
+                { user: 'rm_demo',      label: 'Rahul · Hyderabad',  role: 'Advisor' },
+                { user: 'hamza',        label: 'Hamza · Lyari',      role: 'Advisor' },
+                { user: 'sunny_hayes',  label: 'Sunny · Hyderabad',  role: 'Superadmin' },
+              ].map(({ user, label, role }) => (
                 <div key={user} className="flex items-center gap-2 text-xs text-gray-600">
                   <code className="bg-gray-100 px-2 py-1 rounded font-mono">{user}</code>
                   <span className="text-gray-300">/</span>
                   <code className="bg-gray-100 px-2 py-1 rounded font-mono">aria2026</code>
-                  <span className="text-gray-400 ml-auto">{label}</span>
+                  <span className={`ml-auto text-xs font-medium px-1.5 py-0.5 rounded ${role === 'Superadmin' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-500'}`}>{role}</span>
                 </div>
               ))}
             </div>

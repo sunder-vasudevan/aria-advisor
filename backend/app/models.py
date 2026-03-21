@@ -41,6 +41,8 @@ class Client(Base):
 
     # Personal portal link — set when client registers on ARIA Personal
     personal_user_id = Column(Integer, nullable=True)
+    # Source: "advisor" = added by advisor, "portal" = self-registered via ARIA Personal
+    source = Column(String, nullable=True, default="advisor")
 
     # Contact & personal details (FEAT-101)
     phone = Column(String, nullable=True)
