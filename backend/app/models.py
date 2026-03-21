@@ -39,6 +39,9 @@ class Client(Base):
     advisor_id = Column(Integer, ForeignKey("advisors.id"), nullable=True, index=True)
     advisor = relationship("Advisor", back_populates="clients")
 
+    # Personal portal link — set when client registers on ARIA Personal
+    personal_user_id = Column(Integer, nullable=True)
+
     # Contact & personal details (FEAT-101)
     phone = Column(String, nullable=True)
     email = Column(String, nullable=True)
