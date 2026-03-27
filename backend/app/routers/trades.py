@@ -168,7 +168,7 @@ def approve_trade(
 
     trade = db.query(models.Trade).filter(
         models.Trade.id == trade_id,
-        models.Trade.client_id == x_client_id,
+        models.Trade.client_id == client_id,
     ).first()
 
     if not trade:
@@ -248,7 +248,7 @@ def reject_trade(
 
     trade = db.query(models.Trade).filter(
         models.Trade.id == trade_id,
-        models.Trade.client_id == x_client_id,
+        models.Trade.client_id == client_id,
     ).first()
 
     if not trade:
