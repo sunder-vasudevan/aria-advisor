@@ -115,26 +115,43 @@ def _seed_personal_user_assignments():
     """Ensure all personal users have client + portfolio rows (idempotent, no forced advisor assignment)."""
     with engine.connect() as conn:
         try:
-            # Get all personal users without a client row
-            users = conn.execute(text("SELECT id, display_name FROM personal_users WHERE id NOT IN (SELECT DISTINCT personal_user_id FROM clients WHERE personal_user_id IS NOT NULL)")).fetchall()
-            for user_id, display_name in users:
-                # Create standalone client (no advisor forced)
-                conn.execute(
-                    text("""
-                        INSERT INTO clients (name, age, segment, risk_score, risk_category, advisor_id, personal_user_id, source)
-                        VALUES (:name, 0, 'Retail', 5, 'Moderate', NULL, :puid, 'portal')
-                    """),
-                    {"name": display_name.strip(), "puid": user_id}
+            # Get all personal users without a proper client+portfolio scaffold
+            users = conn.execute(text("""
+                SELECT pu.id, pu.display_name
+                FROM personal_users pu
+                WHERE pu.id NOT IN (
+                    SELECT DISTINCT personal_user_id FROM portfolios WHERE personal_user_id IS NOT NULL
                 )
+            """)).fetchall()
 
-                # Get the inserted client_id
-                client_id_row = conn.execute(
-                    text("SELECT id FROM clients WHERE personal_user_id = :puid ORDER BY id DESC LIMIT 1"),
+            for user_id, display_name in users:
+                # Check if client row exists for this personal user
+                client_row = conn.execute(
+                    text("SELECT id FROM clients WHERE personal_user_id = :puid LIMIT 1"),
                     {"puid": user_id}
                 ).fetchone()
-                client_id = client_id_row[0] if client_id_row else None
 
-                # Create portfolio
+                client_id = None
+                if client_row:
+                    client_id = client_row[0]
+                else:
+                    # Create standalone client (no advisor forced)
+                    conn.execute(
+                        text("""
+                            INSERT INTO clients (name, age, segment, risk_score, risk_category, advisor_id, personal_user_id, source)
+                            VALUES (:name, 0, 'Retail', 5, 'Moderate', NULL, :puid, 'portal')
+                        """),
+                        {"name": display_name.strip(), "puid": user_id}
+                    )
+
+                    # Get the inserted client_id
+                    client_id_row = conn.execute(
+                        text("SELECT id FROM clients WHERE personal_user_id = :puid ORDER BY id DESC LIMIT 1"),
+                        {"puid": user_id}
+                    ).fetchone()
+                    client_id = client_id_row[0] if client_id_row else None
+
+                # Create portfolio (only if client exists and portfolio doesn't)
                 if client_id:
                     existing_portfolio = conn.execute(
                         text("SELECT id FROM portfolios WHERE personal_user_id = :puid LIMIT 1"),
