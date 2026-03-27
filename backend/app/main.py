@@ -111,6 +111,66 @@ def _seed_client_advisor_assignments():
             pass
 
 
+def _migrate_personal_user_scaffolds():
+    """One-time migration: for personal users with advisor_id set, create client+portfolio under that advisor."""
+    with engine.connect() as conn:
+        try:
+            # Find personal users with advisor_id but no client row
+            users = conn.execute(text("""
+                SELECT pu.id, pu.display_name, pu.advisor_id
+                FROM personal_users pu
+                WHERE pu.advisor_id IS NOT NULL
+                AND pu.id NOT IN (SELECT DISTINCT personal_user_id FROM clients WHERE personal_user_id IS NOT NULL)
+            """)).fetchall()
+
+            for user_id, display_name, advisor_id in users:
+                # Try to match with existing unlinked client under this advisor
+                match = conn.execute(
+                    text("SELECT id FROM clients WHERE advisor_id = :aid AND personal_user_id IS NULL AND LOWER(name) = LOWER(:name) LIMIT 1"),
+                    {"aid": advisor_id, "name": display_name.strip()}
+                ).fetchone()
+
+                client_id = None
+                if match:
+                    client_id = match[0]
+                    conn.execute(
+                        text("UPDATE clients SET personal_user_id = :puid WHERE id = :cid"),
+                        {"puid": user_id, "cid": client_id}
+                    )
+                else:
+                    # Create new client under the advisor
+                    conn.execute(
+                        text("""
+                            INSERT INTO clients (name, age, segment, risk_score, risk_category, advisor_id, personal_user_id, source)
+                            VALUES (:name, 0, 'Retail', 5, 'Moderate', :aid, :puid, 'portal')
+                        """),
+                        {"name": display_name.strip(), "aid": advisor_id, "puid": user_id}
+                    )
+                    result = conn.execute(
+                        text("SELECT id FROM clients WHERE advisor_id = :aid AND personal_user_id = :puid ORDER BY id DESC LIMIT 1"),
+                        {"aid": advisor_id, "puid": user_id}
+                    ).fetchone()
+                    client_id = result[0] if result else None
+
+                # Create portfolio
+                if client_id:
+                    existing_portfolio = conn.execute(
+                        text("SELECT id FROM portfolios WHERE personal_user_id = :puid LIMIT 1"),
+                        {"puid": user_id}
+                    ).fetchone()
+                    if not existing_portfolio:
+                        conn.execute(
+                            text("""
+                                INSERT INTO portfolios (client_id, personal_user_id, total_value, equity_pct, debt_pct, cash_pct, target_equity_pct, target_debt_pct, target_cash_pct)
+                                VALUES (:cid, :puid, 0, 0, 0, 100, 60, 30, 10)
+                            """),
+                            {"cid": client_id, "puid": user_id}
+                        )
+            conn.commit()
+        except Exception:
+            pass
+
+
 def _seed_personal_user_assignments():
     """Ensure all personal users have client + portfolio rows (idempotent, no forced advisor assignment)."""
     with engine.connect() as conn:
@@ -227,7 +287,8 @@ async def lifespan(app: FastAPI):
     _run_advisor_migrations()
     _seed_advisors()
     _seed_client_advisor_assignments()
-    _seed_personal_user_assignments()
+    _migrate_personal_user_scaffolds()  # one-time: link existing personal users to advisors
+    _seed_personal_user_assignments()   # ongoing: ensure all personal users have basic scaffold
     yield
 
 
