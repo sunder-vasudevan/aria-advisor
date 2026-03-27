@@ -7,7 +7,7 @@ from datetime import datetime
 
 from ..database import SessionLocal
 from .. import models, schemas
-from ..auth import get_current_user, get_current_personal_user
+from ..auth import get_current_personal_user
 from .notifications import create_notification
 
 
