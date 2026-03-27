@@ -100,103 +100,94 @@ def _seed_advisors():
 def _seed_personal_users_to_advisor():
     """Seed and link test personal users (Ruben, Kate) to Rahul (idempotent)."""
     from .auth import get_password_hash
-    with engine.connect() as conn:
-        try:
-            rahul = conn.execute(text("SELECT id FROM advisors WHERE referral_code = 'RAHUL01' LIMIT 1")).fetchone()
-            if not rahul:
-                return
-            rahul_id = rahul[0]
+    from .personal_models import PersonalUser
+    db = SessionLocal()
+    try:
+        rahul = db.query(models.Advisor).filter(models.Advisor.referral_code == "RAHUL01").first()
+        if not rahul:
+            return
 
-            # Test users to create/link
-            test_users = [
-                {"display_name": "Ruben", "email": "ruben@aria.demo"},
-                {"display_name": "Kate", "email": "kate@aria.demo"},
-            ]
+        # Test users to create/link
+        test_users = [
+            {"display_name": "Ruben", "email": "ruben@aria.demo"},
+            {"display_name": "Kate", "email": "kate@aria.demo"},
+        ]
 
-            for test_user in test_users:
-                # Check if user exists
-                user = conn.execute(
-                    text("SELECT id, advisor_id FROM personal_users WHERE email = :email LIMIT 1"),
-                    {"email": test_user["email"]}
+        for test_user in test_users:
+            # Check if user exists
+            user = db.query(PersonalUser).filter(PersonalUser.email == test_user["email"]).first()
+
+            if not user:
+                # Create new personal user
+                user = PersonalUser(
+                    email=test_user["email"],
+                    hashed_password=get_password_hash("demo1234"),
+                    display_name=test_user["display_name"],
+                )
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+
+            # Link advisor if not already linked
+            if not user.advisor_id:
+                db.execute(
+                    text("UPDATE personal_users SET advisor_id = :aid WHERE id = :uid"),
+                    {"aid": rahul.id, "uid": user.id}
+                )
+                db.commit()
+
+            # Create client + portfolio under Rahul
+            existing_client = db.execute(
+                text("SELECT id FROM clients WHERE personal_user_id = :puid LIMIT 1"),
+                {"puid": user.id}
+            ).fetchone()
+
+            if not existing_client:
+                # Try to match existing unlinked client under Rahul
+                match = db.execute(
+                    text("SELECT id FROM clients WHERE advisor_id = :aid AND personal_user_id IS NULL AND LOWER(name) = LOWER(:name) LIMIT 1"),
+                    {"aid": rahul.id, "name": test_user["display_name"]}
                 ).fetchone()
 
-                user_id = None
-                if user:
-                    user_id, existing_advisor_id = user
-                    # Link to Rahul if not already linked
-                    if not existing_advisor_id:
-                        conn.execute(
-                            text("UPDATE personal_users SET advisor_id = :aid WHERE id = :uid"),
-                            {"aid": rahul_id, "uid": user_id}
-                        )
-                else:
-                    # Create new personal user
-                    conn.execute(
-                        text("""
-                            INSERT INTO personal_users (email, hashed_password, display_name, advisor_id, risk_score, risk_category)
-                            VALUES (:email, :pwd, :display_name, :advisor_id, 5, 'Moderate')
-                        """),
-                        {
-                            "email": test_user["email"],
-                            "pwd": get_password_hash("demo1234"),
-                            "display_name": test_user["display_name"],
-                            "advisor_id": rahul_id
-                        }
+                if match:
+                    db.execute(
+                        text("UPDATE clients SET personal_user_id = :puid WHERE id = :cid"),
+                        {"puid": user.id, "cid": match[0]}
                     )
-                    # Get the inserted user ID
-                    user_row = conn.execute(
-                        text("SELECT id FROM personal_users WHERE email = :email LIMIT 1"),
-                        {"email": test_user["email"]}
-                    ).fetchone()
-                    user_id = user_row[0] if user_row else None
+                else:
+                    # Create new client under Rahul
+                    db.execute(
+                        text("""
+                            INSERT INTO clients (name, age, segment, risk_score, risk_category, advisor_id, personal_user_id, source)
+                            VALUES (:name, 0, 'Retail', 5, 'Moderate', :aid, :puid, 'portal')
+                        """),
+                        {"name": test_user["display_name"], "aid": rahul.id, "puid": user.id}
+                    )
 
-                # Create client + portfolio under Rahul
-                if user_id:
-                    existing_client = conn.execute(
-                        text("SELECT id FROM clients WHERE personal_user_id = :puid LIMIT 1"),
-                        {"puid": user_id}
-                    ).fetchone()
-                    if not existing_client:
-                        # Try to match existing unlinked client under Rahul
-                        match = conn.execute(
-                            text("SELECT id FROM clients WHERE advisor_id = :aid AND personal_user_id IS NULL AND LOWER(name) = LOWER(:name) LIMIT 1"),
-                            {"aid": rahul_id, "name": test_user["display_name"]}
-                        ).fetchone()
-                        if match:
-                            conn.execute(
-                                text("UPDATE clients SET personal_user_id = :puid WHERE id = :cid"),
-                                {"puid": user_id, "cid": match[0]}
-                            )
-                        else:
-                            # Create new client under Rahul
-                            conn.execute(
-                                text("""
-                                    INSERT INTO clients (name, age, segment, risk_score, risk_category, advisor_id, personal_user_id, source)
-                                    VALUES (:name, 0, 'Retail', 5, 'Moderate', :aid, :puid, 'portal')
-                                """),
-                                {"name": test_user["display_name"], "aid": rahul_id, "puid": user_id}
-                            )
-                    # Ensure portfolio exists
-                    existing_portfolio = conn.execute(
-                        text("SELECT id FROM portfolios WHERE personal_user_id = :puid LIMIT 1"),
-                        {"puid": user_id}
-                    ).fetchone()
-                    if not existing_portfolio:
-                        client_id_row = conn.execute(
-                            text("SELECT id FROM clients WHERE personal_user_id = :puid LIMIT 1"),
-                            {"puid": user_id}
-                        ).fetchone()
-                        if client_id_row:
-                            conn.execute(
-                                text("""
-                                    INSERT INTO portfolios (client_id, personal_user_id, total_value, equity_pct, debt_pct, cash_pct, target_equity_pct, target_debt_pct, target_cash_pct)
-                                    VALUES (:cid, :puid, 0, 0, 0, 100, 60, 30, 10)
-                                """),
-                                {"cid": client_id_row[0], "puid": user_id}
-                            )
-            conn.commit()
-        except Exception:
-            pass
+            # Ensure portfolio exists
+            existing_portfolio = db.execute(
+                text("SELECT id FROM portfolios WHERE personal_user_id = :puid LIMIT 1"),
+                {"puid": user.id}
+            ).fetchone()
+
+            if not existing_portfolio:
+                client_id_row = db.execute(
+                    text("SELECT id FROM clients WHERE personal_user_id = :puid LIMIT 1"),
+                    {"puid": user.id}
+                ).fetchone()
+                if client_id_row:
+                    db.execute(
+                        text("""
+                            INSERT INTO portfolios (client_id, personal_user_id, total_value, equity_pct, debt_pct, cash_pct, target_equity_pct, target_debt_pct, target_cash_pct)
+                            VALUES (:cid, :puid, 0, 0, 0, 100, 60, 30, 10)
+                        """),
+                        {"cid": client_id_row[0], "puid": user.id}
+                    )
+        db.commit()
+    except Exception as e:
+        print(f"Error in _seed_personal_users_to_advisor: {e}")
+    finally:
+        db.close()
 
 
 def _seed_client_advisor_assignments():
