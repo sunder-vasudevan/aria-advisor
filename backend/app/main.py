@@ -97,6 +97,78 @@ def _seed_advisors():
         db.close()
 
 
+def _seed_personal_users_to_advisor():
+    """Link test personal users (Ruben, Kate) to Rahul (idempotent)."""
+    with engine.connect() as conn:
+        try:
+            rahul = conn.execute(text("SELECT id FROM advisors WHERE referral_code = 'RAHUL01' LIMIT 1")).fetchone()
+            if not rahul:
+                return
+            rahul_id = rahul[0]
+
+            # Find Ruben and Kate in personal_users and link them to Rahul if not already linked
+            test_users = ["Ruben", "Kate"]
+            for name in test_users:
+                user = conn.execute(
+                    text("SELECT id, advisor_id FROM personal_users WHERE display_name = :name LIMIT 1"),
+                    {"name": name}
+                ).fetchone()
+                if user:
+                    user_id, existing_advisor_id = user
+                    # Only link if not already linked to an advisor
+                    if not existing_advisor_id:
+                        conn.execute(
+                            text("UPDATE personal_users SET advisor_id = :aid WHERE id = :uid"),
+                            {"aid": rahul_id, "uid": user_id}
+                        )
+                        # Create client row under Rahul if doesn't exist
+                        existing_client = conn.execute(
+                            text("SELECT id FROM clients WHERE personal_user_id = :puid LIMIT 1"),
+                            {"puid": user_id}
+                        ).fetchone()
+                        if not existing_client:
+                            # Try to match existing unlinked client
+                            match = conn.execute(
+                                text("SELECT id FROM clients WHERE advisor_id = :aid AND personal_user_id IS NULL AND LOWER(name) = LOWER(:name) LIMIT 1"),
+                                {"aid": rahul_id, "name": name}
+                            ).fetchone()
+                            if match:
+                                conn.execute(
+                                    text("UPDATE clients SET personal_user_id = :puid WHERE id = :cid"),
+                                    {"puid": user_id, "cid": match[0]}
+                                )
+                            else:
+                                # Create new client
+                                conn.execute(
+                                    text("""
+                                        INSERT INTO clients (name, age, segment, risk_score, risk_category, advisor_id, personal_user_id, source)
+                                        VALUES (:name, 0, 'Retail', 5, 'Moderate', :aid, :puid, 'portal')
+                                    """),
+                                    {"name": name, "aid": rahul_id, "puid": user_id}
+                                )
+                        # Ensure portfolio exists
+                        existing_portfolio = conn.execute(
+                            text("SELECT id FROM portfolios WHERE personal_user_id = :puid LIMIT 1"),
+                            {"puid": user_id}
+                        ).fetchone()
+                        if not existing_portfolio:
+                            client_id_row = conn.execute(
+                                text("SELECT id FROM clients WHERE personal_user_id = :puid LIMIT 1"),
+                                {"puid": user_id}
+                            ).fetchone()
+                            if client_id_row:
+                                conn.execute(
+                                    text("""
+                                        INSERT INTO portfolios (client_id, personal_user_id, total_value, equity_pct, debt_pct, cash_pct, target_equity_pct, target_debt_pct, target_cash_pct)
+                                        VALUES (:cid, :puid, 0, 0, 0, 100, 60, 30, 10)
+                                    """),
+                                    {"cid": client_id_row[0], "puid": user_id}
+                                )
+            conn.commit()
+        except Exception:
+            pass
+
+
 def _seed_client_advisor_assignments():
     """Assign all unassigned seeded clients to Rahul (idempotent)."""
     with engine.connect() as conn:
@@ -286,6 +358,7 @@ async def lifespan(app: FastAPI):
     _run_personal_migrations()
     _run_advisor_migrations()
     _seed_advisors()
+    _seed_personal_users_to_advisor()      # link test personal users (Ruben, Kate) to Rahul
     _seed_client_advisor_assignments()
     _migrate_personal_user_scaffolds()  # one-time: link existing personal users to advisors
     _seed_personal_user_assignments()   # ongoing: ensure all personal users have basic scaffold
