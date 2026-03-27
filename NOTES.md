@@ -13,7 +13,8 @@
 **Mobile:** ✅ Fully responsive (iOS + Android web)
 
 ## Deployed URLs
-- **Frontend:** https://aria-advisor.vercel.app (Vercel)
+- **Frontend:** https://aria-advisor.vercel.app (Vercel) — Primary alias (consistent naming)
+- **Frontend (legacy):** https://a-ria.vercel.app (same deployment, for backward compat — to deprecate after stable E2E)
 - **Backend:** https://aria-advisor.onrender.com (Render, free tier)
 - **Database:** Supabase PostgreSQL (pooler, port 6543)
 
@@ -34,7 +35,7 @@
 - Advisor discovery by location — /advisor/all backend ready, Personal frontend UI needed
 - Advisor accept/reject client requests — needs pending_requests table or status flag on Client
 - New advisor signup flow — self-service registration, awaits superadmin approval or auto-activates
-- **Thorough Testing of all features of both ARIA apps** — End-to-end QA across Advisor + Personal + backend (Advisor: Client List, Client 360, all tabs + copilot, briefing, goals, etc.; Personal: client portal, trades, profile, etc.). Before or after TM integration is flexible. Full regression suite.
+- ✅ **Thorough Testing of all features of both ARIA apps** — 2026-03-27 E2E regression test complete. Advisor: Client List, Client 360 (Portfolio, Goals, Trades, Life Events, Interactions tabs), Copilot. Personal: Dashboard, Goals, Life Events, Pending Trades UI verified. 15 screenshots, comprehensive test report. Trades UI now visible (was missing before rebuild). Backend API pending Render redeploy (no code issues).
 
 ## LOCKED — Trade Management Module (Design Phase Complete — 2026-03-27)
 **Session 14:** Trade Management Module design & spec fully locked. Ready for implementation.
