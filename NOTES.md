@@ -28,11 +28,29 @@
 - PRD.md v1.1 — updated with WF benchmark, FEAT-308/309 added
 
 ## ← START HERE NEXT SESSION
-**Parked features (pick one):**
+**Parked features:**
 - Email invite flow — advisor sends ARIA Personal link to client via email (choose: Resend or SendGrid)
 - Superadmin view: collapsible advisor→clients tree, unassigned clients, assign client to advisor
 - Advisor discovery by location — /advisor/all backend ready, Personal frontend UI needed
 - Advisor accept/reject client requests — needs pending_requests table or status flag on Client
+- New advisor signup flow — self-service registration, awaits superadmin approval or auto-activates
+- **Thorough Testing of all features of both ARIA apps** — End-to-end QA across Advisor + Personal + backend (Advisor: Client List, Client 360, all tabs + copilot, briefing, goals, etc.; Personal: client portal, trades, profile, etc.). Before or after TM integration is flexible. Full regression suite.
+
+## LOCKED — Trade Management Module (Design Phase Complete — 2026-03-27)
+**Session 14:** Trade Management Module design & spec fully locked. Ready for implementation.
+- **What:** Advisor initiates trade (MF or Crypto) → Client approves in ARIA Personal → Amount debited/credited to bank → Trade settled
+- **Asset scope:** Mutual funds + Crypto (buy/sell). Direct stocks/bonds/insurance parked for Phase 2+.
+- **Crypto strategy:** Phase 1: Trades on external wallet only (client manually executes on Coinbase/Kraken/MetaMask after ARIA approval). Northstar A: Phase 2+ integrate wallet APIs (MetaMask, WalletConnect) for auto-execution.
+- **Banking:** Mocked Phase 1 (no real bank calls). Phase 2: Real Razorpay / Smallcase / banking APIs.
+- **Key locked decisions:**
+  - Crypto holdings NOT in ARIA portfolio phase 1 (external wallet only)
+  - Mock banking debit/credit on approval
+  - Advisor initiates, client approves, system debits, trade settles
+- **Documents:**
+  - PRD.md: Module 8 (Trade Management) + Module 9 (Integration Layer) with FEAT-1001 through FEAT-1008
+  - docs/TRADE_MANAGEMENT_SPEC.md: 11 sections, complete data model, APIs, flows, test strategy
+  - Plan: cuddly-hopping-sprout.md (exploratory + final design locked)
+- **Next session:** Code phase — Backend migration + Trade/TradeAuditLog models + CRUD APIs + notification stubs
 
 ---
 

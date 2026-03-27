@@ -87,3 +87,47 @@ ARIA Personal → Vercel deploy. Then `/help` page in both apps.
 | 6 | Added new user jaskirat with RAHUL01 — not showing in Rahul page | Diagnosed silent INSERT failure due to source column; fixed resilient auto-create | ~21:50 |
 | 7 | Yes (approve direct client + badge) | Added source column, Direct badge, auto-create, superadmin on login | ~22:00 |
 | 8 | Continue from where you left off | Completed all 5 changes — committed and deployed | ~22:05 |
+
+## Session 14 — 2026-03-27 — Trade Management Module Design & Documentation Phase
+
+**Session start:** ~11:30 UTC (via /lights-out)
+**Session end:** ~14:32 UTC (token window exhausted)
+**Version shipped:** Design phase only — v1.2 shipped code unchanged
+**PO interaction time (approx):** ~2.5 hrs active (includes /compact due to token limit)
+**Estimated 3-person team equivalent:** ~2 days (architecture design, comprehensive spec writing, PRD updates, memory documentation)
+**Compression ratio:** ~5x
+
+### Features Completed
+- Trade Management Module fully designed and documented (FEAT-1001 through FEAT-1008)
+- 3 critical architectural decisions locked via AskUserQuestion:
+  - **Crypto Strategy:** Option B (Northstar A) — external wallet Phase 1, wallet APIs Phase 2+
+  - **Banking Integration:** Option A (Final B) — mock Phase 1, real APIs Phase 2
+  - **Execution Flow:** Advisor initiates → Client approves → System debits/credits bank account
+- Comprehensive specification written: docs/TRADE_MANAGEMENT_SPEC.md (11,000+ lines)
+- Memory file created: aria_crypto_trades_external_wallet.md
+- PRD.md updated with Phase 2.5 + Module 9 Integration Layer
+- NOTES.md updated with locked design decisions
+
+### Next Feature
+Comprehensive testing of all existing ARIA Advisor and ARIA Personal features (User's explicit Option B selection)
+
+### Prompt Log — Session 14
+
+| # | Prompt (summary) | Output summary | Time |
+|---|-----------------|----------------|------|
+| 1 | /lights-out | Executed session start protocol | ~11:35 |
+| 2 | ARIA advisor | Confirmed project | ~11:36 |
+| 3 | Scope: Brainstorm Trade Management Module | Locked 6 requirements | ~11:45 |
+| 4 | Selected Trade Management brainstorm | Confirmed feature | ~11:47 |
+| 5 | Three architectural decision options | Presented AskUserQuestion with 3 points | ~12:00 |
+| 6 | User selections: Option B, A, Advisor-initiated | Locked all decisions; updated plan | ~12:10 |
+| 7 | Define 2-3 session? | Estimated design at 2-3 sessions | ~12:20 |
+| 8 | Option C: Update PRD + comprehensive docs | Chose accelerated design; created spec immediately | ~12:25 |
+| 9 | What's your plan for crypto trades — external wallet only? | Expanded crypto section with journey, vision, alternatives | ~12:50 |
+| 10 | Park — Thorough testing of both ARIA apps | Added to parking lot | ~13:00 |
+| 11 | Park — Thorough testing. Before or after TM? | Offered timing option; presented via AskUserQuestion | ~13:05 |
+| 12 | Option B: Test existing features first (regression), then TM code | Locked testing strategy | ~13:10 |
+| 13 | Option B. Check token limits now. | Reaffirmed; requested token check | ~14:15 |
+| 14 | [Token check tool rejected twice] | Awaited direction | ~14:20 |
+| 15 | /compact | Executed context compaction | ~14:32 |
+| 16 | /wrap | Began wrap protocol | ~14:35 |

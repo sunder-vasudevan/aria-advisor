@@ -220,7 +220,22 @@ This scenario must work end-to-end for every demo:
 
 ---
 
-### Module 8 — Integration Layer *(mock for v1)*
+### Module 8 — Trade Management
+
+| Feature | Status | FEAT ID | Notes |
+|---------|--------|---------|-------|
+| Trade initiation form (advisor) | ⬜ | FEAT-1001 | Asset type (MF / Crypto), action (buy/sell), quantity, estimated value |
+| Trade approval workflow (client) | ⬜ | FEAT-1002 | Client sees pending trades in ARIA Personal, approve/reject with comment |
+| Trade status tracking & audit | ⬜ | FEAT-1003 | Draft → Pending → Approved → Settled; immutable audit logs |
+| Trade notifications | ⬜ | FEAT-1004 | Notify client on initiation; notify advisor on approval |
+| Trade history & reporting | ⬜ | FEAT-1005 | Sortable, filterable trade history in both Advisor + Personal apps |
+| Mock banking layer (Phase 1) | ⬜ | FEAT-1006 | Mock debit/credit on approval; real APIs Phase 2 |
+| Crypto external wallet UX | ⬜ | FEAT-1007 | Client approves in ARIA → executes on Coinbase/Kraken/MetaMask; optional tx hash submission |
+| Mutual fund auto-settlement | ⬜ | FEAT-1008 | MF trades mock-settle on approval; real APIs Phase 2 |
+
+---
+
+### Module 9 — Integration Layer *(mock for v1)*
 
 | Feature | Status | FEAT ID | Notes |
 |---------|--------|---------|-------|
@@ -229,6 +244,9 @@ This scenario must work end-to-end for every demo:
 | Custodian / NSDL / CDSL | ❌ | — | Out of scope v1 |
 | BSE StAR MF / NSE NMF II | ❌ | — | Out of scope v1 |
 | WhatsApp / email client notification | ⬜ | FEAT-802 | Phase 2 — Twilio or WATI |
+| Banking API integration (Razorpay, Smallcase) | ⬜ | FEAT-803 | Phase 2 — for real trade settlement |
+| Crypto exchange integration (CoinDCX, WazirX) | ⬜ | FEAT-804 | Phase 2+ — auto-execute crypto trades |
+| Wallet integration (MetaMask, Coinbase, WalletConnect) | ⬜ | FEAT-805 | Northstar A — auto-settle crypto trades via wallet APIs |
 
 ---
 
@@ -244,6 +262,53 @@ This scenario must work end-to-end for every demo:
 - [x] 20 Indian clients seeded with realistic data
 - [x] Deploy config (Railway + Vercel)
 - [x] Pushed to GitHub
+
+### Phase 2.5 — Trade Management Module (Next)
+**New Module:** Multi-asset trade initiation, client approval, execution tracking.
+**Design & Documentation Phase:** ✅ COMPLETE (2026-03-27) — See `docs/TRADE_MANAGEMENT_SPEC.md` for full spec. Code phase pending token window reset.
+
+| FEAT ID | Feature | Status | Notes |
+|---------|---------|--------|-------|
+| FEAT-1001 | Trade initiation form (advisor-facing) | ⬜ | Asset type (MF / Crypto), action (buy/sell), quantity, estimated value |
+| FEAT-1002 | Trade approval workflow (client-facing) | ⬜ | Client sees pending trades in ARIA Personal, approve/reject with comment |
+| FEAT-1003 | Trade status tracking & audit trail | ⬜ | Draft → Pending Approval → Approved → Settled; immutable logs |
+| FEAT-1004 | Trade notification system | ⬜ | Notify client on trade initiation; notify advisor on client approval |
+| FEAT-1005 | Trade history & reporting | ⬜ | History tab in ARIA Advisor (per client) + ARIA Personal (per client); sortable, filterable |
+| FEAT-1006 | Mock banking layer | ⬜ | Phase 1: mock debit/credit on approval; Phase 2: real API integration |
+| FEAT-1007 | Crypto-first UX (external wallet execution) | ⬜ | Client approves in ARIA → manually executes on Coinbase/Kraken/MetaMask → optionally submits tx hash |
+| FEAT-1008 | Mutual fund auto-execution (mock) | ⬜ | MF trades mock-execute on approval; Phase 2: Smallcase / BSE API integration |
+
+**Key Design Decisions:**
+- **Crypto:** ARIA guides trade proposal; client executes on external wallet (no custody). Phase 2: integrate wallet APIs (MetaMask, Coinbase, WalletConnect).
+- **Mutual Funds:** ARIA initiates → client approves → backend mocks settlement. Phase 2: real mutual fund APIs.
+- **Banking Layer:** Mocked in Phase 1 (no real debit/credit). Phase 2 onward: Razorpay, Smallcase, or custom banking integrations.
+- **Execution Flow:** Advisor initiates → Client approves in ARIA Personal → Amount mocked as debited/credited to bank → Trade marked settled.
+- **Scope:** Mutual funds + Crypto buy/sell only. Direct stocks, bonds, insurance parked for future phase.
+
+**Data Model Additions:**
+```
+Trade
+├── id (UUID)
+├── client_id (FK)
+├── advisor_id (FK)
+├── asset_type (enum: 'mutual_fund' | 'crypto')
+├── action (enum: 'buy' | 'sell')
+├── asset_code (ISIN or ticker)
+├── quantity (decimal)
+├── estimated_value (decimal)
+├── actual_value (decimal, set at execution)
+├── status (enum: draft | pending_approval | approved | settled | rejected | cancelled)
+├── created_at, approved_at, executed_at, settled_at (timestamps)
+├── client_comment, advisor_note (text)
+
+TradeAuditLog (immutable)
+├── id, trade_id (FK)
+├── action (enum: created | submitted | approved | rejected | executed | settled | cancelled)
+├── actor (enum: advisor | client | system)
+├── timestamp, note
+```
+
+---
 
 ### Phase 2 — USP Depth (Next)
 Priority order:
