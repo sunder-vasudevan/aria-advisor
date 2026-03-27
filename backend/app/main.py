@@ -112,7 +112,7 @@ def _seed_client_advisor_assignments():
 
 
 def _seed_personal_user_assignments():
-    """Link all unlinked personal users to Rahul and create client rows (idempotent)."""
+    """Link all unlinked personal users to Rahul and create client + portfolio rows (idempotent)."""
     with engine.connect() as conn:
         try:
             # Get Rahul's ID
@@ -136,21 +136,44 @@ def _seed_personal_user_assignments():
                     {"aid": rahul_id, "name": display_name.strip()}
                 ).fetchone()
 
+                client_id = None
                 if existing_client:
                     # Link existing client
+                    client_id = existing_client[0]
                     conn.execute(
                         text("UPDATE clients SET personal_user_id = :puid WHERE id = :cid"),
-                        {"puid": user_id, "cid": existing_client[0]}
+                        {"puid": user_id, "cid": client_id}
                     )
                 else:
                     # Create new client
-                    conn.execute(
+                    result = conn.execute(
                         text("""
                             INSERT INTO clients (name, age, segment, risk_score, risk_category, advisor_id, personal_user_id, source)
                             VALUES (:name, 0, 'Retail', 5, 'Moderate', :aid, :puid, 'portal')
                         """),
                         {"name": display_name.strip(), "aid": rahul_id, "puid": user_id}
                     )
+                    # Get the inserted client_id
+                    client_id_row = conn.execute(
+                        text("SELECT id FROM clients WHERE advisor_id = :aid AND personal_user_id = :puid ORDER BY id DESC LIMIT 1"),
+                        {"aid": rahul_id, "puid": user_id}
+                    ).fetchone()
+                    client_id = client_id_row[0] if client_id_row else None
+
+                # Ensure portfolio exists (idempotent)
+                if client_id:
+                    existing_portfolio = conn.execute(
+                        text("SELECT id FROM portfolios WHERE personal_user_id = :puid LIMIT 1"),
+                        {"puid": user_id}
+                    ).fetchone()
+                    if not existing_portfolio:
+                        conn.execute(
+                            text("""
+                                INSERT INTO portfolios (client_id, personal_user_id, total_value, equity_pct, debt_pct, cash_pct, target_equity_pct, target_debt_pct, target_cash_pct)
+                                VALUES (:cid, :puid, 0, 0, 0, 100, 60, 30, 10)
+                            """),
+                            {"cid": client_id, "puid": user_id}
+                        )
             conn.commit()
         except Exception:
             pass
