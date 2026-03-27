@@ -97,6 +97,65 @@ def _seed_advisors():
         db.close()
 
 
+def _seed_client_advisor_assignments():
+    """Assign all unassigned seeded clients to Rahul (idempotent)."""
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("""
+                UPDATE clients
+                SET advisor_id = (SELECT id FROM advisors WHERE referral_code = 'RAHUL01' LIMIT 1)
+                WHERE advisor_id IS NULL
+            """))
+            conn.commit()
+        except Exception:
+            pass
+
+
+def _seed_personal_user_assignments():
+    """Link all unlinked personal users to Rahul and create client rows (idempotent)."""
+    with engine.connect() as conn:
+        try:
+            # Get Rahul's ID
+            rahul = conn.execute(text("SELECT id FROM advisors WHERE referral_code = 'RAHUL01' LIMIT 1")).fetchone()
+            if not rahul:
+                return
+            rahul_id = rahul[0]
+
+            # Get all personal users with no advisor_id
+            users = conn.execute(text("SELECT id, display_name FROM personal_users WHERE advisor_id IS NULL")).fetchall()
+            for user_id, display_name in users:
+                # Set advisor_id
+                conn.execute(
+                    text("UPDATE personal_users SET advisor_id = :aid WHERE id = :uid"),
+                    {"aid": rahul_id, "uid": user_id}
+                )
+
+                # Check if client exists under Rahul with this name
+                existing_client = conn.execute(
+                    text("SELECT id FROM clients WHERE advisor_id = :aid AND personal_user_id IS NULL AND LOWER(name) = LOWER(:name) LIMIT 1"),
+                    {"aid": rahul_id, "name": display_name.strip()}
+                ).fetchone()
+
+                if existing_client:
+                    # Link existing client
+                    conn.execute(
+                        text("UPDATE clients SET personal_user_id = :puid WHERE id = :cid"),
+                        {"puid": user_id, "cid": existing_client[0]}
+                    )
+                else:
+                    # Create new client
+                    conn.execute(
+                        text("""
+                            INSERT INTO clients (name, age, segment, risk_score, risk_category, advisor_id, personal_user_id, source)
+                            VALUES (:name, 0, 'Retail', 5, 'Moderate', :aid, :puid, 'portal')
+                        """),
+                        {"name": display_name.strip(), "aid": rahul_id, "puid": user_id}
+                    )
+            conn.commit()
+        except Exception:
+            pass
+
+
 def _run_migrations():
     """Add new columns to existing tables without losing data."""
     new_columns = [
@@ -153,6 +212,8 @@ async def lifespan(app: FastAPI):
     _run_personal_migrations()
     _run_advisor_migrations()
     _seed_advisors()
+    _seed_client_advisor_assignments()
+    _seed_personal_user_assignments()
     yield
 
 
@@ -167,7 +228,7 @@ frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
 personal_frontend_url = os.getenv("PERSONAL_FRONTEND_URL", "http://localhost:5174")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[frontend_url, personal_frontend_url, "https://a-ria.vercel.app", "https://aria-personal.vercel.app", "http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
+    allow_origins=[frontend_url, personal_frontend_url, "https://a-ria.vercel.app", "https://aria-advisor.vercel.app", "https://aria-personal.vercel.app", "http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
