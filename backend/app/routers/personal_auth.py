@@ -101,6 +101,7 @@ def _create_personal_client_and_portfolio(display_name: str, personal_user_id: i
                         """),
                         {"name": display_name.strip(), "aid": advisor_id, "puid": personal_user_id}
                     )
+                    db.flush()  # Ensure INSERT is flushed before SELECT
                     result = db.execute(
                         text("SELECT id FROM clients WHERE advisor_id = :aid AND personal_user_id = :puid ORDER BY id DESC LIMIT 1"),
                         {"aid": advisor_id, "puid": personal_user_id}
@@ -115,6 +116,7 @@ def _create_personal_client_and_portfolio(display_name: str, personal_user_id: i
                     """),
                     {"name": display_name.strip(), "puid": personal_user_id}
                 )
+                db.flush()  # Ensure INSERT is flushed before SELECT
                 result = db.execute(
                     text("SELECT id FROM clients WHERE personal_user_id = :puid ORDER BY id DESC LIMIT 1"),
                     {"puid": personal_user_id}
