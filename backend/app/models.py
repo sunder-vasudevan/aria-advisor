@@ -55,12 +55,12 @@ class Client(Base):
     pincode = Column(String, nullable=True)
     pan_number = Column(String, nullable=True)
 
-    portfolio = relationship("Portfolio", back_populates="client", uselist=False)
-    goals = relationship("Goal", back_populates="client")
-    life_events = relationship("LifeEvent", back_populates="client")
-    audit_logs = relationship("AuditLog", back_populates="client")
-    interactions = relationship("ClientInteraction", back_populates="client")
-    trades = relationship("Trade", back_populates="client", foreign_keys="Trade.client_id")
+    portfolio = relationship("Portfolio", back_populates="client", uselist=False, cascade="all, delete-orphan")
+    goals = relationship("Goal", back_populates="client", cascade="all, delete-orphan")
+    life_events = relationship("LifeEvent", back_populates="client", cascade="all, delete-orphan")
+    audit_logs = relationship("AuditLog", back_populates="client", cascade="all, delete-orphan")
+    interactions = relationship("ClientInteraction", back_populates="client", cascade="all, delete-orphan")
+    trades = relationship("Trade", back_populates="client", foreign_keys="Trade.client_id", cascade="all, delete-orphan")
 
 
 class Portfolio(Base):
@@ -80,7 +80,7 @@ class Portfolio(Base):
     target_cash_pct = Column(Float, nullable=False)
 
     client = relationship("Client", back_populates="portfolio")
-    holdings = relationship("Holding", back_populates="portfolio")
+    holdings = relationship("Holding", back_populates="portfolio", cascade="all, delete-orphan")
 
 
 class Holding(Base):

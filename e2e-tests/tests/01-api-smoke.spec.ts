@@ -72,7 +72,7 @@ test.describe('Backend API Smoke Tests', () => {
         trade_type: 'buy',
         quantity: 10,
         price_per_unit: 250,
-        notes: 'E2E test trade - draft',
+        notes: '[E2E] draft trade',
       },
     });
     const body = await res.json();

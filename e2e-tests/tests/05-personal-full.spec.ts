@@ -16,7 +16,7 @@ let personalToken = '';
 async function ensureTestUser(request: any): Promise<string> {
   // Register
   const regRes = await request.post(`${API_BASE}/personal/auth/register`, {
-    data: { email: TEST_EMAIL, password: TEST_PASSWORD, display_name: 'E2E Tester' },
+    data: { email: TEST_EMAIL, password: TEST_PASSWORD, display_name: '[TEST] E2E Tester' },
   });
   const regBody = await regRes.json();
   if (regBody.access_token) return regBody.access_token;
@@ -92,7 +92,7 @@ test.describe('ARIA Personal - Registration + Login', () => {
   test('POST /personal/auth/register returns JWT', async ({ request }) => {
     const uniqueEmail = `e2e_reg_${Date.now()}@aria-test.com`;
     const res = await request.post(`${API_BASE}/personal/auth/register`, {
-      data: { email: uniqueEmail, password: TEST_PASSWORD, display_name: 'Reg Test User' },
+      data: { email: uniqueEmail, password: TEST_PASSWORD, display_name: '[TEST] Reg Tester' },
     });
     const body = await res.json();
     console.log('Register status:', res.status());
@@ -110,7 +110,7 @@ test.describe('ARIA Personal - Registration + Login', () => {
     // Register first
     const uniqueEmail = `e2e_login_${Date.now()}@aria-test.com`;
     await request.post(`${API_BASE}/personal/auth/register`, {
-      data: { email: uniqueEmail, password: TEST_PASSWORD, display_name: 'Login Test' },
+      data: { email: uniqueEmail, password: TEST_PASSWORD, display_name: '[TEST] Login Tester' },
     });
 
     // Now login
@@ -131,7 +131,7 @@ test.describe('ARIA Personal - Registration + Login', () => {
     // Get fresh token
     const uniqueEmail = `e2e_me_${Date.now()}@aria-test.com`;
     const regRes = await request.post(`${API_BASE}/personal/auth/register`, {
-      data: { email: uniqueEmail, password: TEST_PASSWORD, display_name: 'Me Test' },
+      data: { email: uniqueEmail, password: TEST_PASSWORD, display_name: '[TEST] Me Tester' },
     });
     const { access_token } = await regRes.json();
 
@@ -153,7 +153,7 @@ test.describe('ARIA Personal - Registration + Login', () => {
   test('Wrong password returns 401', async ({ request }) => {
     const uniqueEmail = `e2e_auth_${Date.now()}@aria-test.com`;
     await request.post(`${API_BASE}/personal/auth/register`, {
-      data: { email: uniqueEmail, password: TEST_PASSWORD, display_name: 'Auth Test' },
+      data: { email: uniqueEmail, password: TEST_PASSWORD, display_name: '[TEST] Auth Tester' },
     });
 
     const res = await request.post(`${API_BASE}/personal/auth/login`, {
@@ -172,7 +172,7 @@ test.describe('ARIA Personal - Portfolio & Goals API', () => {
   test.beforeAll(async ({ request }) => {
     userEmail = `e2e_pg_${Date.now()}@aria-test.com`;
     const res = await request.post(`${API_BASE}/personal/auth/register`, {
-      data: { email: userEmail, password: TEST_PASSWORD, display_name: 'PG Tester' },
+      data: { email: userEmail, password: TEST_PASSWORD, display_name: '[TEST] PG Tester' },
     });
     const body = await res.json();
     token = body.access_token || '';
@@ -245,7 +245,7 @@ test.describe('ARIA Personal - UI Tests', () => {
   test.beforeAll(async ({ request }) => {
     const email = `e2e_ui_${Date.now()}@aria-test.com`;
     const res = await request.post(`${API_BASE}/personal/auth/register`, {
-      data: { email, password: TEST_PASSWORD, display_name: 'UI Tester' },
+      data: { email, password: TEST_PASSWORD, display_name: '[TEST] UI Tester' },
     });
     const body = await res.json();
     token = body.access_token || '';
@@ -255,7 +255,7 @@ test.describe('ARIA Personal - UI Tests', () => {
     const email = `e2e_form_${Date.now()}@aria-test.com`;
     // Register via API
     await page.request.post(`${API_BASE}/personal/auth/register`, {
-      data: { email, password: TEST_PASSWORD, display_name: 'Form Tester' },
+      data: { email, password: TEST_PASSWORD, display_name: '[TEST] Form Tester' },
     });
 
     await page.goto(PERSONAL_URL, { waitUntil: 'networkidle' });
@@ -305,7 +305,7 @@ test.describe('ARIA Personal - Cross-App: Advisor Links Client', () => {
     // Register a new personal user
     const email = `e2e_linked_${Date.now()}@aria-test.com`;
     const regRes = await request.post(`${API_BASE}/personal/auth/register`, {
-      data: { email, password: TEST_PASSWORD, display_name: 'Linked Tester', referral_code: 'RAHUL01' },
+      data: { email, password: TEST_PASSWORD, display_name: '[TEST] Linked Tester', referral_code: 'RAHUL01' },
     });
     const { access_token, user } = await regRes.json();
     console.log('Registered with referral RAHUL01:', JSON.stringify(user));
@@ -328,7 +328,7 @@ test.describe('ARIA Personal - Cross-App: Advisor Links Client', () => {
   test('POST /personal/auth/link-advisor links via referral code', async ({ request }) => {
     const email = `e2e_link2_${Date.now()}@aria-test.com`;
     const regRes = await request.post(`${API_BASE}/personal/auth/register`, {
-      data: { email, password: TEST_PASSWORD, display_name: 'Link Tester' },
+      data: { email, password: TEST_PASSWORD, display_name: '[TEST] Link Tester' },
     });
     const { access_token } = await regRes.json();
 

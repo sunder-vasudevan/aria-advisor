@@ -323,3 +323,20 @@ def update_profile(
     db.refresh(current_user)
     return {"id": current_user.id, "display_name": current_user.display_name,
             "risk_score": current_user.risk_score, "risk_category": current_user.risk_category}
+
+
+@router.delete("/test-cleanup")
+def cleanup_test_users(db: Session = Depends(get_db)):
+    """Delete all test users (email LIKE '*@aria-test.com') and their trades. Used by E2E teardown."""
+    # Delete test trades (notes start with [E2E])
+    deleted_trades = db.execute(
+        text("DELETE FROM trades WHERE notes LIKE '[E2E]%'")
+    ).rowcount
+
+    # Delete test users (email ends with @aria-test.com)
+    deleted_users = db.execute(
+        text("DELETE FROM personal_users WHERE email LIKE '%@aria-test.com'")
+    ).rowcount
+
+    db.commit()
+    return {"deleted_users": deleted_users, "deleted_trades": deleted_trades}

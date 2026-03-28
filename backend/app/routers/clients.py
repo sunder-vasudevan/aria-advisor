@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Header
+from fastapi import APIRouter, Depends, HTTPException, Query, Header, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date, timedelta
 
 from ..database import get_db
-from ..models import Client, Portfolio, Holding, Goal, LifeEvent
+from ..models import Client, Portfolio, Holding, Goal, LifeEvent, AuditLog, ClientInteraction, Trade
 from ..schemas import ClientListItem, Client360, HoldingOut, GoalOut, UrgencyFlag, GoalProjection, ClientCreate, ClientUpdate, PortfolioCreate, GoalCreate, GoalUpdate, LifeEventOut, LifeEventCreate, LifeEventUpdate, derive_risk_category
 from ..urgency import compute_urgency, urgency_score
 from ..simulation import monte_carlo_goal_probability, find_required_sip
@@ -390,3 +390,18 @@ def get_goal_projection(
         ))
 
     return results
+
+
+@router.delete("/{client_id}")
+def delete_client(
+    client_id: int,
+    db: Session = Depends(get_db),
+):
+    """Delete a client and all related data (cascade)."""
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    db.delete(client)
+    db.commit()
+    return Response(status_code=204)
