@@ -133,7 +133,7 @@ def submit_trade_for_approval(
             personal_user_id=client.personal_user_id,
             notification_type=models.NotificationTypeEnum.trade_submitted.value,
             trade_id=trade.id,
-            message=f"New trade pending your approval: {trade.action} {trade.asset_code} ({trade.quantity} units, ₹{trade.estimated_value})",
+            message=f"New trade pending your approval: {trade.action.value} {trade.asset_code} ({trade.quantity} units, ₹{trade.estimated_value})",
         )
 
     db.commit()
@@ -217,7 +217,7 @@ def approve_trade(
         advisor_id=trade.advisor_id,
         notification_type=models.NotificationTypeEnum.trade_approved.value,
         trade_id=trade.id,
-        message=f"Trade approved by {trade.client_id}: {trade.action} {trade.asset_code} ({trade.quantity} units). Settling now.",
+        message=f"Trade approved by {trade.client_id}: {trade.action.value} {trade.asset_code} ({trade.quantity} units). Settling now.",
     )
 
     db.commit()
@@ -280,7 +280,7 @@ def reject_trade(
         advisor_id=trade.advisor_id,
         notification_type=models.NotificationTypeEnum.trade_rejected.value,
         trade_id=trade.id,
-        message=f"Trade rejected by client: {trade.action} {trade.asset_code}. Reason: {trade.client_comment or 'None'}",
+        message=f"Trade rejected by client: {trade.action.value} {trade.asset_code}. Reason: {trade.client_comment or 'None'}",
     )
 
     db.commit()
