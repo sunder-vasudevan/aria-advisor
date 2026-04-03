@@ -19,10 +19,11 @@ def list_clients(
     x_advisor_role: Optional[str] = Header(default=None),
 ):
     # Superadmin sees all clients; advisor sees only their own; no header = all (fallback)
+    # Archived clients are always excluded from the list view
     if x_advisor_id and x_advisor_role != "superadmin":
-        clients = db.query(Client).filter(Client.advisor_id == x_advisor_id).all()
+        clients = db.query(Client).filter(Client.advisor_id == x_advisor_id, Client.is_archived.is_(False)).all()
     else:
-        clients = db.query(Client).all()
+        clients = db.query(Client).filter(Client.is_archived.is_(False)).all()
     result = []
     for c in clients:
         portfolio = c.portfolio
@@ -392,16 +393,30 @@ def get_goal_projection(
     return results
 
 
-@router.delete("/{client_id}")
-def delete_client(
+@router.patch("/{client_id}/archive")
+def archive_client(
     client_id: int,
     db: Session = Depends(get_db),
 ):
-    """Delete a client and all related data (cascade)."""
+    """Soft-archive a client. No hard deletes are permitted."""
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-
-    db.delete(client)
+    client.is_archived = True
     db.commit()
+    return {"archived": True, "client_id": client_id}
+
+
+@router.patch("/{client_id}/unarchive")
+def unarchive_client(
+    client_id: int,
+    db: Session = Depends(get_db),
+):
+    """Restore an archived client."""
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    client.is_archived = False
+    db.commit()
+    return {"archived": False, "client_id": client_id}
     return Response(status_code=204)

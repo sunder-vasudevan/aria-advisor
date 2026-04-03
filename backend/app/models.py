@@ -46,6 +46,9 @@ class Client(Base):
     # Source: "advisor" = added by advisor, "portal" = self-registered via ARIA Personal
     source = Column(String, nullable=True, default="advisor")
 
+    # Archive flag — soft delete only, no hard deletes allowed
+    is_archived = Column(Boolean, nullable=False, default=False)
+
     # Contact & personal details (FEAT-101)
     phone = Column(String, nullable=True)
     email = Column(String, nullable=True)

@@ -1,9 +1,9 @@
 import ARiALogo from '../components/ARiALogo'
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getClient, createPortfolio } from '../api/client'
+import { getClient, createPortfolio, archiveClient } from '../api/client'
 import { createLifeEvent, updateLifeEvent, deleteLifeEvent } from '../api/client'
-import { ArrowLeft, AlertTriangle, Clock, CheckCircle, CalendarCheck, Sparkles, Pencil, ChevronLeft, ChevronRight, Plus, X, Loader2, Trash2 } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Clock, CheckCircle, CalendarCheck, Sparkles, Pencil, ChevronLeft, ChevronRight, Plus, X, Loader2, Trash2, Archive } from 'lucide-react'
 import PortfolioChart from '../components/PortfolioChart'
 import HoldingsTable from '../components/HoldingsTable'
 import GoalsPanel from '../components/GoalsPanel'
@@ -343,6 +343,10 @@ export default function Client360() {
   const [eventError, setEventError] = useState(null)
   const [pendingDeleteEventId, setPendingDeleteEventId] = useState(null)
 
+  // Archive state
+  const [archiveConfirm, setArchiveConfirm] = useState(false)
+  const [archiving, setArchiving] = useState(false)
+
   // Holdings edit state
   const [editingHoldings, setEditingHoldings] = useState(false)
   const [holdingsSaving, setHoldingsSaving] = useState(false)
@@ -457,6 +461,17 @@ export default function Client360() {
     )
   }
 
+  async function handleArchive() {
+    setArchiving(true)
+    try {
+      await archiveClient(client.id)
+      navigate('/')
+    } catch {
+      setArchiving(false)
+      setArchiveConfirm(false)
+    }
+  }
+
   // Tabs shown on desktop (inside center panel); mobile adds Info + Copilot
   const desktopTabs = [
     { key: 'portfolio', label: 'Portfolio & Holdings' },
@@ -549,14 +564,24 @@ export default function Client360() {
                   <div className="text-white font-semibold text-base">{client.name}</div>
                   <div className="text-navy-300 text-xs mt-0.5">Age {client.age}</div>
                 </div>
-                <button
-                  onClick={() => navigate(`/clients/${client.id}/edit`)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 bg-navy-800 text-navy-200 text-xs rounded-lg hover:bg-navy-700 transition-colors"
-                  aria-label="Edit client"
-                >
-                  <Pencil size={11} />
-                  Edit
-                </button>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => navigate(`/clients/${client.id}/edit`)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 bg-navy-800 text-navy-200 text-xs rounded-lg hover:bg-navy-700 transition-colors"
+                    aria-label="Edit client"
+                  >
+                    <Pencil size={11} />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setArchiveConfirm(true)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 bg-navy-800 text-amber-400 text-xs rounded-lg hover:bg-navy-700 transition-colors"
+                    aria-label="Archive client"
+                  >
+                    <Archive size={11} />
+                    Archive
+                  </button>
+                </div>
               </div>
               <div className="mt-3 flex gap-2">
                 <span className={`text-xs px-2 py-0.5 rounded font-medium ${
@@ -875,6 +900,38 @@ export default function Client360() {
           saving={eventSaving}
           error={eventError}
         />
+      )}
+
+      {/* Archive confirmation modal */}
+      {archiveConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <Archive size={20} className="text-amber-500" />
+              <h3 className="font-semibold text-gray-900">Archive {client.name}?</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-5">
+              This client will be hidden from your client book. No data is deleted — you can restore them anytime.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setArchiveConfirm(false)}
+                disabled={archiving}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleArchive}
+                disabled={archiving}
+                className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                {archiving ? <Loader2 size={14} className="animate-spin" /> : <Archive size={14} />}
+                {archiving ? 'Archiving…' : 'Archive Client'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

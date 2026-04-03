@@ -381,6 +381,14 @@ def _run_migrations():
             except Exception:
                 pass
 
+    # FEAT-ARCHIVE: is_archived on clients
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE clients ADD COLUMN is_archived BOOLEAN DEFAULT FALSE"))
+            conn.commit()
+        except Exception:
+            pass
+
     # FEAT-CLIENT-TRADE: cash_balance on portfolios
     with engine.connect() as conn:
         try:

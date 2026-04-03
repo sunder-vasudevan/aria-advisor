@@ -96,6 +96,9 @@ export const rejectTrade = (tradeId, data) =>
 export const updateCryptoTxHash = (tradeId, data) =>
   api.put(`/trades/${tradeId}/tx-hash`, data).then(r => r.data)
 
+export const archiveClient = (clientId) =>
+  api.patch(`/clients/${clientId}/archive`).then(r => r.data)
+
 // Notifications (FEAT-1004)
 export const getAdvisorNotifications = (limit = 20) =>
   api.get(`/notifications/advisor/me?limit=${limit}`).then(r => r.data)
