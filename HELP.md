@@ -1,5 +1,5 @@
 # ARIA Advisor Workbench — Help Guide
-**Version 1.4** · Last updated: 2026-04-03
+**Version 2.0** · Last updated: 2026-04-04
 
 ---
 
@@ -100,15 +100,18 @@ The bell icon in the top-right header shows unread notifications (red badge with
 On any client's 360° page, you can create and submit trades for approval.
 
 **Step 1: Create Trade (Draft)**
-- Click **Create Trade** on the client's page
-- Fill in:
-  - **Asset Type:** Mutual Fund or Crypto
-  - **Action:** Buy or Sell
-  - **Asset Code:** Fund name (e.g. "HDFC Balanced Advantage") or ticker (e.g. "BTC")
-  - **Quantity:** Units to buy/sell
-  - **Estimated Value:** Total INR amount
-  - **Note (optional):** Context for the client
-- Click **Save** — trade is saved as **Draft** (hidden from client)
+- Click **Initiate Trade** on the client's Trades panel
+- Select **Buy** or **Sell**
+- **Search for an instrument** — type name, ticker, or category (e.g. "HDFC", "RELIANCE", "Gilt")
+  - **Buy:** shows all 30 available instruments (10 stocks + 20 MFs + crypto)
+  - **Sell:** shows only instruments the client currently holds
+- Choose input mode: **By Amount (₹)** or **By Units** — the other field auto-fills using NAV
+- Validations applied automatically:
+  - Sell: blocks if quantity exceeds units held
+  - Crypto: minimum 0.0001 units
+  - Stocks: minimum 1 unit (whole shares only)
+- Add an optional **Advisor Note** for context
+- Click **Buy / Sell [Instrument Name]** — trade saved as **Draft** (hidden from client)
 
 **Step 2: Review & Submit for Approval**
 - View draft trades in the **Trades** section (collapsed by default)
@@ -184,6 +187,34 @@ To re-seed: `cd backend && python seed.py`
 ---
 
 ## Changelog
+
+### v2.0 (2026-04-04)
+- **Instrument Dropdown — Trade Initiation:** Searchable dropdown replaces free-text entry for advisor-initiated trades
+  - 30 instruments: 10 NIFTY stocks + 20 MFs (index, debt, money market)
+  - Buy: full instrument list with NAV auto-calc (amount ↔ units toggle)
+  - Sell: filtered to client's actual holdings only; shows units held + value; blocks if quantity exceeds holding
+  - Dynamic submit label: "Buy Reliance Industries" / "Sell HDFC Index Fund"
+  - Minimum quantity enforced: crypto 0.0001 units, stocks 1 unit (whole shares only)
+- **Live Price Refresh:** Holding NAVs updated on page load from live sources
+  - Mutual funds: AMFI India NAVAll.txt (daily, official, free)
+  - Crypto (BTC/ETH): CoinGecko API, INR prices, refreshed every 5 minutes
+  - Stocks: Yahoo Finance NSE feed, refreshed every 5 minutes
+  - Portfolio total_value auto-recalculated after each refresh
+- **Default Holdings Seed:** All new clients (advisor-created or personal signup) get a standard starter portfolio
+  - 10 NIFTY stocks + 10 MFs + 5 BTC + 5 ETH + ₹5L cash balance
+  - Existing clients (Kate, Ruben) backfilled on next backend restart
+- **Opportunity Pipeline (FEAT-2001):** Kanban board to track prospects across 4 stages
+  - Stages: Prospect → Discovery → Proposal → Won
+  - Convert Won prospect directly to client
+  - AUM estimates per stage; KPI strip with totals
+  - Route: `/opportunities`
+- **Task Queue (FEAT-2002):** Full task management for advisor workflow
+  - Due date, workflow tag (onboarding/review/trade/compliance/general)
+  - Overdue (red) and due-within-7-days (amber) colour coding
+  - Filter: pending / done / all
+  - Route: `/tasks`
+- **Advisor Workspace KPIs:** Open Opportunities and Tasks Due ≤ 7d tiles added to workspace overview
+- **Billing Nav:** Billing page now accessible from Advisor Workspace header
 
 ### v1.4 (2026-04-03)
 - **Client-Initiated Trades:** Clients can now initiate trades from their Personal dashboard

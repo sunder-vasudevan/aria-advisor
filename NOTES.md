@@ -7,7 +7,7 @@
 
 ## Current State
 **Phase:** 2 — USP Depth 🔶 IN PROGRESS
-**Version:** v1.2
+**Version:** v2.0
 **Repo:** https://github.com/sunder-vasudevan/aria-advisor
 **Local:** `/Users/sunnyhayes/Daytona/aria-advisor`
 **Mobile:** ✅ Fully responsive (iOS + Android web)
@@ -278,3 +278,45 @@
 - **~/.claude/settings.json** ✅ — `bypassPermissions` set + grep/find/head/tail/awk/cd added; restart Claude Code to activate
 - **Parking lot** ✅ — project documents template (Word/PPT/Excel) parked for future session
 - Commit: `2ae64d8`
+
+## What Shipped This Session (2026-04-04 — Session 16 / Trade Upgrade + Live Prices)
+
+### FEAT-2001 Opportunity Pipeline ✅
+- Kanban board: Prospect → Discovery → Proposal → Won (4 columns)
+- Convert Won prospect to client directly from kanban
+- KPI strip: per-stage count + AUM total
+- Route: `/opportunities`
+
+### FEAT-2002 Task Queue ✅
+- Task list with overdue (red) / due-within-7d (amber) colour coding
+- Safari-safe date selects (Day/Month/Year dropdowns)
+- Filter tabs: pending / done / all; KPI strip: Pending, Due ≤ 7d, Overdue
+- Route: `/tasks`
+
+### Advisor Workspace Upgrades ✅
+- Added "Open Opps" (violet) + "Tasks Due 7d" (cyan) KPI tiles → grid-cols-6
+- Added Billing nav link to Advisor Workspace header
+
+### Instrument Dropdown — Trade Initiation ✅
+- 30 instruments from nifty_sample_dataset_with_isin.xlsx: 10 stocks + 20 MFs
+- Sell: filters to client holdings only + validates against units_held
+- Buy: full list + amount↔units NAV auto-calc
+- Minimum qty enforced: crypto 0.0001, stocks 1 unit — frontend + backend
+- Backend: `_validate_min_quantity()` in trades.py called on both create_trade_draft + client_submit_trade
+
+### Default Holdings Seed ✅
+- `seed_holdings.py`: 10 stocks + 10 MFs + 5 BTC + 5 ETH + ₹5L cash
+- Wired into: advisor client create, personal user signup, `_backfill_default_holdings()` at startup
+- Backfill threshold: portfolios with < 22 holdings get wiped and re-seeded
+
+### Live Price Refresh ✅
+- New `/prices` router: AMFI (MFs, 1hr cache), CoinGecko (crypto INR, 5min), yfinance .NS (stocks, 5min)
+- Endpoints: `/prices/refresh/client/{id}`, `/prices/refresh/personal/{id}`, `/prices/cache/status`
+- Advisor: `refreshClientPrices()` called in TradesPanel on mount
+- Personal: `refreshMyPrices()` called in Dashboard before portfolio render
+
+### Open / Pending
+- FEAT-2005 Trade Compliance (plan saved, not built): consent checkbox + risk warning screen
+- FEAT-2003 Advisor Workspace Revamp (full ref HTML alignment)
+- FEAT-2004 Client Lifecycle State Machine
+- yfinance stock prices: demo-grade; needs proper NSE provider for production
