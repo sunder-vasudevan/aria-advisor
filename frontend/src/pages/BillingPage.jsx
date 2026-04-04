@@ -1,7 +1,7 @@
 import ARiALogo from '../components/ARiALogo'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TrendingUp, HelpCircle, LogOut, Receipt, RefreshCw, ChevronLeft, CreditCard, Clock, CheckCircle, AlertTriangle } from 'lucide-react'
+import { TrendingUp, HelpCircle, LogOut, Receipt, RefreshCw, CreditCard, CheckCircle, AlertTriangle, Plus, X } from 'lucide-react'
 import { getAllInvoices, getFeeConfig, setFeeConfig, createInvoice, collectInvoice } from '../api/billing'
 import { getClients, fmt } from '../api/client'
 import { getAdvisorSession, advisorLogout } from '../auth'
@@ -22,6 +22,100 @@ function StatusBadge({ status }) {
   )
 }
 
+function CreateInvoiceModal({ clients, feeConfig, onClose, onCreated, showToast }) {
+  const [form, setForm] = useState({
+    client_id: '',
+    fee_type: feeConfig?.fee_type || 'aum',
+    rate: feeConfig?.rate ?? 1.0,
+    billing_period: feeConfig?.billing_period || 'monthly',
+    description: '',
+  })
+  const [saving, setSaving] = useState(false)
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleSubmit = async () => {
+    if (!form.client_id) { showToast('Select a client', 'error'); return }
+    setSaving(true)
+    try {
+      await createInvoice(form.client_id, {
+        fee_type: form.fee_type,
+        rate: parseFloat(form.rate),
+        billing_period: form.billing_period,
+        description: form.description || undefined,
+      })
+      showToast('Invoice created')
+      onCreated()
+    } catch (e) {
+      showToast(e?.response?.data?.detail || 'Failed to create invoice', 'error')
+    } finally { setSaving(false) }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-base font-bold text-gray-900">Create Invoice</h3>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600"><X size={16} /></button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">Client</label>
+            <select value={form.client_id} onChange={e => set('client_id', e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="">Select client…</option>
+              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Fee Type</label>
+              <select value={form.fee_type} onChange={e => set('fee_type', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                {Object.entries(FEE_TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1">
+                {form.fee_type === 'aum' ? 'Rate (%)' : 'Amount (₹)'}
+              </label>
+              <input type="number" step="0.01" value={form.rate} onChange={e => set('rate', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">Period</label>
+            <select value={form.billing_period} onChange={e => set('billing_period', e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">Description (optional — for one-off invoices)</label>
+            <input type="text" value={form.description} onChange={e => set('description', e.target.value)}
+              placeholder="e.g. Advisory consultation – Apr 2026"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+            Cancel
+          </button>
+          <button onClick={handleSubmit} disabled={saving}
+            className="flex-1 px-4 py-2 bg-[#1D6FDB] text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50">
+            {saving ? 'Creating…' : 'Create Invoice'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function BillingPage() {
   const navigate = useNavigate()
   const session = getAdvisorSession()
@@ -37,6 +131,7 @@ export default function BillingPage() {
   const [generatingAll, setGeneratingAll] = useState(false)
   const [collectingId, setCollectingId] = useState(null)
   const [toast, setToast] = useState(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type })
@@ -48,7 +143,8 @@ export default function BillingPage() {
     try {
       const [invRes, clientRes, cfgRes] = await Promise.all([getAllInvoices(), getClients(), getFeeConfig()])
       setInvoices(invRes.data || [])
-      setClients(clientRes.clients || clientRes.data || [])
+      // getClients() returns a plain array directly
+      setClients(Array.isArray(clientRes) ? clientRes : (clientRes.clients || clientRes.data || []))
       const cfg = cfgRes.data
       setFeeConfigState(cfg)
       if (cfg) setConfigForm({ fee_type: cfg.fee_type, rate: cfg.rate, billing_period: cfg.billing_period })
@@ -146,6 +242,16 @@ export default function BillingPage() {
         </div>
       )}
 
+      {showCreateModal && (
+        <CreateInvoiceModal
+          clients={clients}
+          feeConfig={feeConfig}
+          onClose={() => setShowCreateModal(false)}
+          onCreated={() => { setShowCreateModal(false); loadData() }}
+          showToast={showToast}
+        />
+      )}
+
       <div className="flex-1 p-4 md:p-8 pb-24 md:pb-8 max-w-7xl mx-auto w-full">
         {/* Page title */}
         <div className="flex items-center justify-between mb-6">
@@ -153,14 +259,23 @@ export default function BillingPage() {
             <h1 className="text-xl font-bold text-gray-900">Billing</h1>
             <p className="text-sm text-gray-500 mt-0.5">Fee config, invoices, and collections</p>
           </div>
-          <button
-            onClick={handleGenerateAll}
-            disabled={generatingAll || !feeConfig}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#1D6FDB] text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 shadow-sm transition-colors"
-          >
-            {generatingAll ? <RefreshCw size={14} className="animate-spin" /> : <Receipt size={14} />}
-            Generate All Invoices
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#1D6FDB] text-white text-sm font-semibold rounded-lg hover:bg-blue-700 shadow-sm transition-colors"
+            >
+              <Plus size={14} /> New Invoice
+            </button>
+            <button
+              onClick={handleGenerateAll}
+              disabled={generatingAll || !feeConfig || clients.length === 0}
+              className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              title={!feeConfig ? 'Set a default fee config first' : 'Generate invoices for all clients using stored configs'}
+            >
+              {generatingAll ? <RefreshCw size={14} className="animate-spin" /> : <Receipt size={14} />}
+              Generate All
+            </button>
+          </div>
         </div>
 
         {/* KPI bar */}
@@ -184,8 +299,11 @@ export default function BillingPage() {
         {/* Fee Config card */}
         <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-gray-800">Default Fee Configuration</h2>
-            <button onClick={() => setConfigEdit(!configEdit)} className="text-xs text-[#1D6FDB] hover:underline">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-800">Default Fee Configuration</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Applies to all clients unless a per-client override is set in Client 360° → Billing tab</p>
+            </div>
+            <button onClick={() => setConfigEdit(!configEdit)} className="text-xs text-[#1D6FDB] hover:underline flex-shrink-0">
               {configEdit ? 'Cancel' : 'Edit'}
             </button>
           </div>
@@ -220,7 +338,7 @@ export default function BillingPage() {
               <div><span className="text-gray-500">Period: </span><span className="font-medium capitalize">{feeConfig.billing_period}</span></div>
             </div>
           ) : (
-            <p className="text-sm text-gray-400 italic">No default fee config set. Click Edit to configure.</p>
+            <p className="text-sm text-gray-400 italic">No default fee config set. Click Edit to configure, or use New Invoice for one-off billing.</p>
           )}
         </div>
 
@@ -241,7 +359,14 @@ export default function BillingPage() {
           {loading ? (
             <div className="p-8 text-center text-sm text-gray-400">Loading…</div>
           ) : filtered.length === 0 ? (
-            <div className="p-8 text-center text-sm text-gray-400">No invoices{filter !== 'all' ? ` with status "${filter}"` : ''}.</div>
+            <div className="p-8 text-center">
+              <div className="text-sm text-gray-400 mb-3">No invoices{filter !== 'all' ? ` with status "${filter}"` : ' yet'}.</div>
+              {filter === 'all' && (
+                <button onClick={() => setShowCreateModal(true)} className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#1D6FDB] text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                  <Plus size={14} /> Create first invoice
+                </button>
+              )}
+            </div>
           ) : (
             <>
               {/* Desktop table */}
@@ -253,6 +378,7 @@ export default function BillingPage() {
                       <th className="text-left px-4 py-2 font-medium">Type</th>
                       <th className="text-left px-4 py-2 font-medium">Amount</th>
                       <th className="text-left px-4 py-2 font-medium">Period</th>
+                      <th className="text-left px-4 py-2 font-medium">Description</th>
                       <th className="text-left px-4 py-2 font-medium">Status</th>
                       <th className="px-4 py-2"></th>
                     </tr>
@@ -268,6 +394,7 @@ export default function BillingPage() {
                         <td className="px-4 py-3 text-gray-600">{FEE_TYPE_LABELS[inv.fee_type] || inv.fee_type}</td>
                         <td className="px-4 py-3 font-medium text-gray-900">{fmt.inr(inv.amount)}</td>
                         <td className="px-4 py-3 text-gray-500 text-xs">{inv.period_start} → {inv.period_end}</td>
+                        <td className="px-4 py-3 text-gray-500 text-xs max-w-[180px] truncate">{inv.description}</td>
                         <td className="px-4 py-3"><StatusBadge status={inv.status} /></td>
                         <td className="px-4 py-3 text-right">
                           {inv.status === 'pending' && (
@@ -296,7 +423,8 @@ export default function BillingPage() {
                       </button>
                       <StatusBadge status={inv.status} />
                     </div>
-                    <div className="text-xs text-gray-500 mb-2">{FEE_TYPE_LABELS[inv.fee_type]} · {inv.period_start} → {inv.period_end}</div>
+                    <div className="text-xs text-gray-500 mb-1">{FEE_TYPE_LABELS[inv.fee_type]} · {inv.period_start} → {inv.period_end}</div>
+                    {inv.description && <div className="text-xs text-gray-400 mb-2 truncate">{inv.description}</div>}
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-gray-900">{fmt.inr(inv.amount)}</span>
                       {inv.status === 'pending' && (
