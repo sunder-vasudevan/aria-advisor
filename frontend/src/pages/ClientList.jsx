@@ -1,8 +1,8 @@
 import ARiALogo from '../components/ARiALogo'
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, TrendingUp, ChevronRight, ChevronDown, RefreshCw, Bell, BellRing, X, CheckCircle, UserPlus, LayoutList, Layers, HelpCircle, LogOut, Wifi, Zap } from 'lucide-react'
-import { getClients, getBriefing, getClient, getAdvisorNotifications, markNotificationRead, fmt } from '../api/client'
+import { AlertTriangle, TrendingUp, ChevronRight, ChevronDown, RefreshCw, Bell, BellRing, X, CheckCircle, UserPlus, LayoutList, Layers, HelpCircle, LogOut, Wifi, Zap, UserMinus } from 'lucide-react'
+import { getClients, getBriefing, getClient, getAdvisorNotifications, markNotificationRead, delinkClient, fmt } from '../api/client'
 import { getAdvisorSession, advisorLogout } from '../auth'
 
 function UrgencyBadge({ flag }) {
@@ -242,6 +242,8 @@ export default function ClientList() {
   const [viewMode, setViewMode] = useState('grouped')
   const [briefingCollapsed, setBriefingCollapsed] = useState(false)
   const [showBriefing, setShowBriefing] = useState(false)
+  const [segmentFilter, setSegmentFilter] = useState('All')
+  const [delinkConfirm, setDelinkConfirm] = useState(null)
   const prefetchCache = useRef({})
   const session = getAdvisorSession()
 
@@ -282,13 +284,33 @@ export default function ClientList() {
       .finally(() => setBriefingLoading(false))
   }
 
-  const filtered = clients.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.segment.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = clients.filter(c => {
+    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.segment.toLowerCase().includes(search.toLowerCase())
+    const matchesSegment = segmentFilter === 'All' || c.segment === segmentFilter
+    return matchesSearch && matchesSegment
+  })
 
   const attentionCount = clients.filter(c => c.urgency_score > 0).length
   const totalAUM = clients.reduce((sum, c) => sum + (c.total_value || 0), 0)
+  const pendingTradesCount = clients.reduce((sum, c) => sum + (c.pending_trades_count || 0), 0)
+
+  const workflowStages = ['Intake', 'Review', 'Proposed', 'Awaiting', 'Compliance', 'Done']
+  const workflowCounts = workflowStages.map((stage, i) => {
+    // derive from trade statuses across all clients
+    const stageMap = { 'Intake': 'draft', 'Review': 'under_review', 'Proposed': 'proposed', 'Awaiting': 'pending_approval', 'Compliance': 'compliance_check', 'Done': 'approved' }
+    return clients.reduce((sum, c) => sum + ((c.trades || []).filter(t => t.status === stageMap[stage]).length), 0)
+  })
+
+  const handleDelink = async (id) => {
+    try {
+      await delinkClient(id)
+      setClients(prev => prev.filter(c => c.id !== id))
+      setDelinkConfirm(null)
+    } catch {
+      alert('Failed to delink client')
+    }
+  }
 
   const todayDate = new Date().toLocaleDateString('en-IN', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
@@ -454,15 +476,59 @@ export default function ClientList() {
           </div>
         )}
 
-        {/* ── Search + View toggle ── */}
-        <div className="mb-4 flex items-center gap-3">
+        {/* ── KPI bar ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          {[
+            { label: 'Total AUM', value: fmt.inr(totalAUM), color: 'text-[#1D6FDB]' },
+            { label: 'Total Clients', value: clients.length, color: 'text-gray-900' },
+            { label: 'Needs Attention', value: attentionCount, color: attentionCount > 0 ? 'text-red-600' : 'text-emerald-600' },
+            { label: 'Pending Trades', value: pendingTradesCount, color: pendingTradesCount > 0 ? 'text-amber-600' : 'text-gray-900' },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+              <div className="text-xs text-gray-400 uppercase tracking-wider font-medium">{label}</div>
+              <div className={`text-xl font-bold mt-1 tabular-nums ${color}`}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Workflow Pipeline strip ── */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 mb-4 overflow-x-auto">
+          <div className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-2">Workflow Pipeline</div>
+          <div className="flex gap-2 min-w-max">
+            {workflowStages.map((stage, i) => (
+              <div key={stage} className="flex items-center gap-2">
+                <div className="text-center">
+                  <div className="text-xs text-gray-500 mb-0.5">{stage}</div>
+                  <div className={`text-sm font-bold px-3 py-1 rounded-lg ${workflowCounts[i] > 0 ? 'bg-blue-50 text-[#1D6FDB]' : 'bg-gray-50 text-gray-400'}`}>
+                    {workflowCounts[i]}
+                  </div>
+                </div>
+                {i < workflowStages.length - 1 && (
+                  <ChevronRight size={12} className="text-gray-300 flex-shrink-0" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Search + Segment filter + View toggle ── */}
+        <div className="mb-4 flex items-center gap-3 flex-wrap">
           <input
             type="text"
             placeholder="Search clients…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="flex-1 max-w-sm px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white"
+            className="flex-1 min-w-[160px] max-w-sm px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white"
           />
+          <select
+            value={segmentFilter}
+            onChange={e => setSegmentFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200"
+          >
+            <option value="All">All Segments</option>
+            <option value="HNI">HNI</option>
+            <option value="Retail">Retail</option>
+          </select>
           <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('grouped')}
@@ -499,18 +565,18 @@ export default function ClientList() {
           <>
             <div className="md:hidden space-y-3">
               {filtered.map(client => (
-                <ClientCard key={client.id} client={client} navigate={navigate} onMouseEnter={() => handlePrefetch(client.id)} />
+                <ClientCard key={client.id} client={client} navigate={navigate} onMouseEnter={() => handlePrefetch(client.id)} delinkConfirm={delinkConfirm} setDelinkConfirm={setDelinkConfirm} onDelink={handleDelink} />
               ))}
               {filtered.length === 0 && (
                 <div className="text-center py-12 text-gray-400 text-sm">No clients found</div>
               )}
             </div>
             <div className="hidden md:block bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
-              <ClientTable clients={filtered} navigate={navigate} onPrefetch={handlePrefetch} />
+              <ClientTable clients={filtered} navigate={navigate} onPrefetch={handlePrefetch} delinkConfirm={delinkConfirm} setDelinkConfirm={setDelinkConfirm} onDelink={handleDelink} />
             </div>
           </>
         ) : (
-          <GroupedView clients={filtered} navigate={navigate} onPrefetch={handlePrefetch} />
+          <GroupedView clients={filtered} navigate={navigate} onPrefetch={handlePrefetch} delinkConfirm={delinkConfirm} setDelinkConfirm={setDelinkConfirm} onDelink={handleDelink} />
         )}
 
         <div className="mt-3 text-xs text-gray-400 text-right">
@@ -561,15 +627,18 @@ export default function ClientList() {
   )
 }
 
-function ClientCard({ client, navigate, onMouseEnter }) {
+function ClientCard({ client, navigate, onMouseEnter, delinkConfirm, setDelinkConfirm, onDelink }) {
+  const isConfirming = delinkConfirm === client.id
   return (
     <div
-      onClick={() => navigate(`/clients/${client.id}`)}
       onMouseEnter={onMouseEnter}
-      className="bg-white rounded-xl border border-gray-100 p-4 cursor-pointer shadow-card hover:shadow-card-hover active:bg-gray-50 active:scale-[0.98] transition-all"
+      className={`bg-white rounded-xl border p-4 shadow-card transition-all ${isConfirming ? 'border-amber-300 bg-amber-50' : 'border-gray-100 hover:shadow-card-hover'}`}
     >
       <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div
+          onClick={() => !isConfirming && navigate(`/clients/${client.id}`)}
+          className={`flex items-center gap-3 min-w-0 flex-1 ${!isConfirming ? 'cursor-pointer active:opacity-70' : ''}`}
+        >
           <Avatar name={client.name} />
           <div className="min-w-0">
             <div className="font-medium text-gray-900 truncate">{client.name}</div>
@@ -581,21 +650,38 @@ function ClientCard({ client, navigate, onMouseEnter }) {
           <div className="font-semibold text-sm text-gray-900">{fmt.inr(client.total_value)}</div>
         </div>
       </div>
-      <div className="mt-2.5 flex flex-wrap gap-1">
-        <ProbabilityPill urgencyScore={client.urgency_score} />
-        {client.needs_advisor && <NeedsAdvisorBadge />}
-        {client.direct_signup && <DirectBadge />}
-        {client.portal_active && !client.direct_signup && <PortalBadge />}
-        {client.urgency_flags.slice(0, 1).map((f, i) => <UrgencyBadge key={i} flag={f} />)}
-        {client.urgency_flags.length > 1 && (
-          <span className="text-xs text-gray-500 self-center">+{client.urgency_flags.length - 1} more</span>
+      <div className="mt-2.5 flex flex-wrap gap-1 items-center justify-between">
+        <div className="flex flex-wrap gap-1">
+          <ProbabilityPill urgencyScore={client.urgency_score} />
+          {client.needs_advisor && <NeedsAdvisorBadge />}
+          {client.direct_signup && <DirectBadge />}
+          {client.portal_active && !client.direct_signup && <PortalBadge />}
+          {client.urgency_flags.slice(0, 1).map((f, i) => <UrgencyBadge key={i} flag={f} />)}
+          {client.urgency_flags.length > 1 && (
+            <span className="text-xs text-gray-500 self-center">+{client.urgency_flags.length - 1} more</span>
+          )}
+        </div>
+        {isConfirming ? (
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-amber-700 font-medium">Confirm delink?</span>
+            <button onClick={() => onDelink(client.id)} className="text-xs px-2 py-1 bg-red-500 text-white rounded font-medium hover:bg-red-600">Yes</button>
+            <button onClick={() => setDelinkConfirm(null)} className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded font-medium hover:bg-gray-200">Cancel</button>
+          </div>
+        ) : (
+          <button
+            onClick={e => { e.stopPropagation(); setDelinkConfirm(client.id) }}
+            className="p-1.5 rounded-lg text-gray-300 hover:text-amber-500 hover:bg-amber-50 transition-colors"
+            title="Delink client"
+          >
+            <UserMinus size={14} />
+          </button>
         )}
       </div>
     </div>
   )
 }
 
-function ClientTable({ clients, navigate, onPrefetch }) {
+function ClientTable({ clients, navigate, onPrefetch, delinkConfirm, setDelinkConfirm, onDelink }) {
   if (clients.length === 0) {
     return <div className="text-center py-12 text-gray-400 text-sm">No clients found</div>
   }
@@ -612,57 +698,77 @@ function ClientTable({ clients, navigate, onPrefetch }) {
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-50">
-        {clients.map(client => (
-          <tr
-            key={client.id}
-            onClick={() => navigate(`/clients/${client.id}`)}
-            onMouseEnter={() => onPrefetch && onPrefetch(client.id)}
-            className="hover:bg-gray-50 cursor-pointer transition-colors"
-          >
-            <td className="px-6 py-4">
-              <div className="flex items-center gap-3">
-                <Avatar name={client.name} />
-                <div>
-                  <div className="font-medium text-gray-900">{client.name}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">Age {client.age} · {client.risk_category}</div>
+        {clients.map(client => {
+          const isConfirming = delinkConfirm === client.id
+          return (
+            <tr
+              key={client.id}
+              onMouseEnter={() => onPrefetch && onPrefetch(client.id)}
+              className={`transition-colors ${isConfirming ? 'bg-amber-50' : 'hover:bg-gray-50 cursor-pointer'}`}
+              onClick={() => !isConfirming && navigate(`/clients/${client.id}`)}
+            >
+              <td className="px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <Avatar name={client.name} />
+                  <div>
+                    <div className="font-medium text-gray-900">{client.name}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">Age {client.age} · {client.risk_category}</div>
+                  </div>
                 </div>
-              </div>
-            </td>
-            <td className="px-6 py-4"><SegmentBadge segment={client.segment} /></td>
-            <td className="px-6 py-4 text-right">
-              <div className="font-semibold text-gray-900">{fmt.inr(client.total_value)}</div>
-            </td>
-            <td className="px-6 py-4">
-              <div className="flex items-center gap-1.5">
-                <ProbabilityPill urgencyScore={client.urgency_score} />
-                {client.needs_advisor && <NeedsAdvisorBadge />}
-                {client.direct_signup && <DirectBadge />}
-                {client.portal_active && !client.direct_signup && <PortalBadge />}
-              </div>
-            </td>
-            <td className="px-6 py-4">
-              <div className="flex flex-wrap gap-1">
-                {client.urgency_flags.length === 0 ? (
-                  <span className="text-xs text-gray-400">—</span>
+              </td>
+              <td className="px-6 py-4"><SegmentBadge segment={client.segment} /></td>
+              <td className="px-6 py-4 text-right">
+                <div className="font-semibold text-gray-900">{fmt.inr(client.total_value)}</div>
+              </td>
+              <td className="px-6 py-4">
+                <div className="flex items-center gap-1.5">
+                  <ProbabilityPill urgencyScore={client.urgency_score} />
+                  {client.needs_advisor && <NeedsAdvisorBadge />}
+                  {client.direct_signup && <DirectBadge />}
+                  {client.portal_active && !client.direct_signup && <PortalBadge />}
+                </div>
+              </td>
+              <td className="px-6 py-4">
+                <div className="flex flex-wrap gap-1">
+                  {client.urgency_flags.length === 0 ? (
+                    <span className="text-xs text-gray-400">—</span>
+                  ) : (
+                    client.urgency_flags.slice(0, 2).map((f, i) => <UrgencyBadge key={i} flag={f} />)
+                  )}
+                  {client.urgency_flags.length > 2 && (
+                    <span className="text-xs text-gray-500 self-center">+{client.urgency_flags.length - 2} more</span>
+                  )}
+                </div>
+              </td>
+              <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
+                {isConfirming ? (
+                  <div className="flex items-center justify-end gap-2">
+                    <span className="text-xs text-amber-700 font-medium">Confirm delink?</span>
+                    <button onClick={() => onDelink(client.id)} className="text-xs px-2 py-1 bg-red-500 text-white rounded font-medium hover:bg-red-600">Yes</button>
+                    <button onClick={() => setDelinkConfirm(null)} className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded font-medium hover:bg-gray-200">Cancel</button>
+                  </div>
                 ) : (
-                  client.urgency_flags.slice(0, 2).map((f, i) => <UrgencyBadge key={i} flag={f} />)
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => setDelinkConfirm(client.id)}
+                      className="p-1.5 rounded-lg text-gray-300 hover:text-amber-500 hover:bg-amber-50 transition-colors"
+                      title="Delink client"
+                    >
+                      <UserMinus size={14} />
+                    </button>
+                    <ChevronRight size={16} className="text-gray-400" />
+                  </div>
                 )}
-                {client.urgency_flags.length > 2 && (
-                  <span className="text-xs text-gray-500 self-center">+{client.urgency_flags.length - 2} more</span>
-                )}
-              </div>
-            </td>
-            <td className="px-6 py-4 text-right">
-              <ChevronRight size={16} className="text-gray-400 ml-auto" />
-            </td>
-          </tr>
-        ))}
+              </td>
+            </tr>
+          )
+        })}
       </tbody>
     </table>
   )
 }
 
-function GroupedView({ clients, navigate, onPrefetch }) {
+function GroupedView({ clients, navigate, onPrefetch, delinkConfirm, setDelinkConfirm, onDelink }) {
   const needsAttention = clients.filter(c => c.urgency_score > 0)
   const onTrack = clients.filter(c => c.urgency_score === 0)
 
@@ -686,7 +792,7 @@ function GroupedView({ clients, navigate, onPrefetch }) {
               {group.map(c => <ClientCard key={c.id} client={c} navigate={navigate} onMouseEnter={() => onPrefetch && onPrefetch(c.id)} />)}
             </div>
             <div className="hidden md:block bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
-              <ClientTable clients={group} navigate={navigate} onPrefetch={onPrefetch} />
+              <ClientTable clients={group} navigate={navigate} onPrefetch={onPrefetch} delinkConfirm={delinkConfirm} setDelinkConfirm={setDelinkConfirm} onDelink={onDelink} />
             </div>
           </div>
         )}

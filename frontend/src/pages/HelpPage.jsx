@@ -47,12 +47,24 @@ const sections = [
         text: 'Each client row shows a colour-coded urgency flag — Red (high), Amber (medium), Green (on track). Flags are driven by portfolio drift, overdue follow-ups, and life events.',
       },
       {
-        heading: 'Search & Filter',
-        text: 'Type in the search bar to filter by name or segment. Use the segment pill filters (HNI / Retail) to narrow the list.',
+        heading: 'KPI Bar',
+        text: 'Four cards at the top of the Client Book show Total AUM, Total Clients, Needs Attention count, and Pending Trades — all derived from loaded data, no extra calls.',
+      },
+      {
+        heading: 'Workflow Pipeline Strip',
+        text: 'A 6-stage count bar (Intake → Review → Proposed → Awaiting → Compliance → Done) shows live trade counts across your entire book.',
+      },
+      {
+        heading: 'Search & Segment Filter',
+        text: 'Type in the search bar to filter by name. Use the Segment dropdown (All / HNI / Retail) to narrow the list by client segment.',
       },
       {
         heading: 'View Toggle',
         text: 'Switch between Grouped view (Needs Attention / On Track, collapsible) and List view using the toggle in the header.',
+      },
+      {
+        heading: 'Delink Client',
+        text: 'Click the UserMinus icon on any client row/card to delink. An amber confirmation prompt appears inline — click Yes to confirm or Cancel to dismiss.',
       },
       {
         heading: 'Add Client',
@@ -90,7 +102,23 @@ const sections = [
       },
       {
         heading: 'Sidebar',
-        text: 'Shows client summary (AUM, segment, risk, age), urgency flags, and the Situation Summary narrative. The sidebar is collapsible on desktop.',
+        text: 'Shows client summary (AUM, segment, risk, age), urgency flags, compliance snapshot (KYC + suitability), and an activity timeline of the last 3 interactions. Collapsible on desktop.',
+      },
+      {
+        heading: '6-Metric Bar',
+        text: 'Below the client name: AUM, Open Tasks (pending trades), Reviews YTD (interactions this year), Net Flows, Portal Actions (coming soon), and Risk Drift score.',
+      },
+      {
+        heading: 'Workflow Monitor',
+        text: 'Pinned strip above tabs showing trade counts across 6 stages: Draft → Pending → Approved → Compliance → Settled → Rejected.',
+      },
+      {
+        heading: 'Start Review Cycle',
+        text: 'Button in the top-right opens the Meeting Prep panel with AI-generated talking points, goal summary, and recommended actions.',
+      },
+      {
+        heading: 'Client Basics grid',
+        text: 'At the top of the Portfolio tab: all client profile fields (name, email, phone, PAN, occupation, income, city, DOB) in a wrapping grid.',
       },
       {
         heading: 'Portfolio tab',

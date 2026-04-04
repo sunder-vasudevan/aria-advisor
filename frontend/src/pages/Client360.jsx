@@ -1,9 +1,9 @@
 import ARiALogo from '../components/ARiALogo'
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getClient, createPortfolio, archiveClient } from '../api/client'
+import { getClient, createPortfolio, archiveClient, getAdvisorNotifications, markNotificationRead } from '../api/client'
 import { createLifeEvent, updateLifeEvent, deleteLifeEvent } from '../api/client'
-import { ArrowLeft, AlertTriangle, Clock, CheckCircle, CalendarCheck, Sparkles, Pencil, ChevronLeft, ChevronRight, Plus, X, Loader2, Trash2, Archive } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Clock, CheckCircle, CalendarCheck, Sparkles, Pencil, ChevronLeft, ChevronRight, Plus, X, Loader2, Trash2, Archive, Bell, BellRing } from 'lucide-react'
 import PortfolioChart from '../components/PortfolioChart'
 import HoldingsTable from '../components/HoldingsTable'
 import GoalsPanel from '../components/GoalsPanel'
@@ -319,6 +319,82 @@ function HoldingsEditForm({ portfolio, onSave, onCancel, saving, error }) {
           {saving ? <><Loader2 size={14} className="animate-spin" />Saving…</> : 'Save Holdings'}
         </button>
       </div>
+    </div>
+  )
+}
+
+function NotificationBell360() {
+  const [open, setOpen] = useState(false)
+  const [notifications, setNotifications] = useState([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const panelRef = useRef(null)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    getAdvisorNotifications(20).then(r => {
+      setNotifications(r.notifications || [])
+      setUnreadCount(r.unread_count || 0)
+    }).catch(() => {})
+    const iv = setInterval(() => {
+      getAdvisorNotifications(20).then(r => {
+        setNotifications(r.notifications || [])
+        setUnreadCount(r.unread_count || 0)
+      }).catch(() => {})
+    }, 60000)
+    return () => clearInterval(iv)
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    const h = (e) => { if (panelRef.current && !panelRef.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [open])
+
+  const handleOpen = async () => {
+    setOpen(true)
+    if (unreadCount > 0) {
+      const unread = notifications.filter(n => !n.read)
+      await Promise.allSettled(unread.map(n => markNotificationRead(n.id)))
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+      setUnreadCount(0)
+    }
+  }
+
+  const badge = unreadCount > 9 ? '9+' : String(unreadCount)
+  return (
+    <div className="relative" ref={panelRef}>
+      <button onClick={handleOpen} className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Notifications">
+        {unreadCount > 0 ? <BellRing size={18} className="text-[#1D6FDB]" /> : <Bell size={18} />}
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">{badge}</span>
+        )}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-[340px] bg-white border border-gray-200 rounded-xl shadow-lg z-50 flex flex-col max-h-[400px]">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 flex-shrink-0">
+            <span className="text-sm font-semibold text-gray-900">Notifications</span>
+            <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
+          </div>
+          <div className="overflow-y-auto flex-1">
+            {notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <CheckCircle size={28} className="text-gray-200 mb-2" />
+                <p className="text-sm text-gray-400">All caught up</p>
+              </div>
+            ) : notifications.map(n => (
+              <button key={n.id} onClick={() => { if (n.client_id) navigate(`/clients/${n.client_id}`); setOpen(false) }}
+                className={`w-full text-left px-4 py-3 flex items-start gap-3 border-b border-gray-50 ${!n.read ? 'bg-blue-50' : 'bg-white'} hover:bg-gray-50 transition-colors`}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-800 leading-snug">{n.message}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{n.created_at?.slice(0, 10)}</p>
+                </div>
+                {!n.read && <span className="w-2 h-2 rounded-full bg-[#1D6FDB] flex-shrink-0 mt-1.5" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -666,6 +742,25 @@ export default function Client360() {
                 ))}
               </div>
             </div>
+
+            {/* Activity Timeline — desktop sidebar */}
+            {(client.interactions || []).length > 0 && (
+              <div className="p-5 border-t border-navy-800">
+                <div className="text-navy-400 text-xs font-semibold uppercase tracking-wider mb-3">Activity Timeline</div>
+                <div className="space-y-2">
+                  {(client.interactions || []).slice(0, 3).map((interaction, i) => (
+                    <div key={i} className="flex gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-navy-500 flex-shrink-0 mt-1.5" />
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium text-navy-200 capitalize">{interaction.interaction_type?.replace(/_/g, ' ') || 'Interaction'}</div>
+                        <div className="text-xs text-navy-500 truncate">{interaction.notes?.slice(0, 60) || '—'}</div>
+                        <div className="text-xs text-navy-600 mt-0.5">{interaction.interaction_date?.slice(0, 10)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -675,7 +770,7 @@ export default function Client360() {
 
         {/* Desktop topbar (hidden on mobile) */}
         <div className="hidden lg:block bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <div>
               <h1 className="text-lg font-bold text-gray-900">{client.name}</h1>
               <div className="text-sm text-gray-500">
@@ -683,13 +778,57 @@ export default function Client360() {
                 <span className="font-semibold text-gray-900">{fmt.inr(client.portfolio?.total_value)}</span>
               </div>
             </div>
-            <button
-              onClick={() => setShowMeetingPrep(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-navy-950 text-white text-sm font-medium rounded-lg hover:bg-navy-800 transition-colors active:scale-[0.96] transition-transform"
-            >
-              <CalendarCheck size={14} />
-              Prep for Meeting
-            </button>
+            <div className="flex items-center gap-2">
+              <NotificationBell360 />
+              <button
+                onClick={() => setShowMeetingPrep(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-navy-950 text-white text-sm font-medium rounded-lg hover:bg-navy-800 transition-colors active:scale-[0.96]"
+              >
+                <CalendarCheck size={14} />
+                Start Review Cycle
+              </button>
+            </div>
+          </div>
+          {/* 6-metric bar */}
+          <div className="grid grid-cols-6 gap-2">
+            {[
+              { label: 'AUM', value: fmt.inr(client.portfolio?.total_value), color: 'text-[#1D6FDB]' },
+              { label: 'Open Tasks', value: (client.trades || []).filter(t => t.status === 'pending_approval').length, color: 'text-amber-600' },
+              { label: 'Reviews YTD', value: (client.interactions || []).filter(i => new Date(i.interaction_date).getFullYear() === new Date().getFullYear()).length, color: 'text-gray-900' },
+              { label: 'Net Flows', value: null, color: 'text-gray-400' },
+              { label: 'Portal Actions', value: null, color: 'text-gray-400' },
+              { label: 'Risk Drift', value: client.risk_score ? `${client.risk_score}/10` : '—', color: client.risk_score > 7 ? 'text-red-600' : client.risk_score > 4 ? 'text-amber-600' : 'text-emerald-600' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="bg-gray-50 rounded-lg px-3 py-2 text-center">
+                <div className="text-xs text-gray-400 truncate">{label}</div>
+                {value === null
+                  ? <div className="text-xs font-medium text-gray-300 mt-0.5">Coming Soon</div>
+                  : <div className={`text-sm font-bold mt-0.5 tabular-nums ${color}`}>{value}</div>
+                }
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile 6-metric bar */}
+        <div className="lg:hidden px-4 pt-3 flex-shrink-0">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: 'AUM', value: fmt.inr(client.portfolio?.total_value), color: 'text-[#1D6FDB]' },
+              { label: 'Open Tasks', value: (client.trades || []).filter(t => t.status === 'pending_approval').length, color: 'text-amber-600' },
+              { label: 'Reviews YTD', value: (client.interactions || []).filter(i => new Date(i.interaction_date).getFullYear() === new Date().getFullYear()).length, color: 'text-gray-900' },
+              { label: 'Net Flows', value: null, color: 'text-gray-400' },
+              { label: 'Portal Actions', value: null, color: 'text-gray-400' },
+              { label: 'Risk Drift', value: client.risk_score ? `${client.risk_score}/10` : '—', color: client.risk_score > 7 ? 'text-red-600' : client.risk_score > 4 ? 'text-amber-600' : 'text-emerald-600' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="bg-white rounded-lg border border-gray-100 px-2 py-1.5 text-center">
+                <div className="text-xs text-gray-400 truncate">{label}</div>
+                {value === null
+                  ? <div className="text-[10px] font-medium text-gray-300 mt-0.5">Soon</div>
+                  : <div className={`text-xs font-bold mt-0.5 tabular-nums ${color}`}>{value}</div>
+                }
+              </div>
+            ))}
           </div>
         </div>
 
@@ -697,6 +836,49 @@ export default function Client360() {
         <div className="px-4 lg:px-6 pt-4 flex-shrink-0">
           <SituationSummary clientId={id} />
         </div>
+
+        {/* ── Workflow Monitor ── */}
+        {(() => {
+          const trades = client.trades || []
+          const stages = [
+            { label: 'Draft', status: 'draft' },
+            { label: 'Pending', status: 'pending_approval' },
+            { label: 'Approved', status: 'approved' },
+            { label: 'Compliance', status: 'compliance_check' },
+            { label: 'Settled', status: 'settled' },
+            { label: 'Rejected', status: 'rejected' },
+          ]
+          const activeStage = stages.findIndex(s => trades.some(t => t.status === s.status))
+          return (
+            <div className="px-4 lg:px-6 pt-4 flex-shrink-0">
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+                <div className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-2">Workflow Monitor</div>
+                <div className="flex items-center gap-1 overflow-x-auto">
+                  {stages.map((s, i) => {
+                    const count = trades.filter(t => t.status === s.status).length
+                    const isActive = i === activeStage
+                    const isDone = s.status === 'settled'
+                    const isRejected = s.status === 'rejected'
+                    return (
+                      <div key={s.status} className="flex items-center gap-1 flex-shrink-0">
+                        <div className={`text-center px-2 py-1 rounded-lg text-xs font-medium ${
+                          isRejected && count > 0 ? 'bg-red-50 text-red-600 border border-red-200' :
+                          isActive ? 'bg-blue-50 text-[#1D6FDB] border border-blue-200' :
+                          isDone && count > 0 ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                          'bg-gray-50 text-gray-400'
+                        }`}>
+                          <div>{s.label}</div>
+                          <div className="font-bold">{count}</div>
+                        </div>
+                        {i < stages.length - 1 && <ChevronRight size={10} className="text-gray-300 flex-shrink-0" />}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── Desktop tabs ── */}
         <div className="hidden lg:block px-6 pt-4 flex-shrink-0">
@@ -743,6 +925,30 @@ export default function Client360() {
         <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-5">
           <div className={activeTab === 'portfolio' ? '' : 'hidden'}>
             <div className="space-y-5">
+              {/* Client Basics grid */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-card">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Client Basics</div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Name', value: client.name },
+                    { label: 'Email', value: client.email },
+                    { label: 'Phone', value: client.phone },
+                    { label: 'PAN', value: client.pan_number },
+                    { label: 'Risk Score', value: client.risk_score ? `${client.risk_score}/10` : null },
+                    { label: 'Segment', value: client.segment },
+                    { label: 'City', value: client.city },
+                    { label: 'Date of Birth', value: client.date_of_birth?.slice(0, 10) },
+                    { label: 'Occupation', value: client.occupation },
+                    { label: 'Annual Income', value: client.annual_income ? fmt.inr(client.annual_income) : null },
+                    { label: 'AUM', value: client.total_value ? fmt.inr(client.total_value) : null },
+                  ].filter(f => f.value).map(({ label, value }) => (
+                    <div key={label} className="bg-gray-50 rounded-lg p-2.5">
+                      <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</div>
+                      <div className="text-sm font-medium text-gray-900 truncate">{value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-card">
                 <PortfolioChart portfolio={client.portfolio} clientName={client.name} />
               </div>
