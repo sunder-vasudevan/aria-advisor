@@ -99,6 +99,9 @@ export const updateCryptoTxHash = (tradeId, data) =>
 export const archiveClient = (clientId) =>
   api.patch(`/clients/${clientId}/archive`).then(r => r.data)
 
+export const delinkClient = (clientId) =>
+  api.patch(`/clients/${clientId}/delink`).then(r => r.data)
+
 // Notifications (FEAT-1004)
 export const getAdvisorNotifications = (limit = 20) =>
   api.get(`/notifications/advisor/me?limit=${limit}`).then(r => r.data)
@@ -108,6 +111,22 @@ export const markNotificationRead = (notificationId) =>
 
 export const deleteNotification = (notificationId) =>
   api.delete(`/notifications/${notificationId}`).then(r => r.data)
+
+// Prospects (FEAT-2001)
+export const getProspects = () => api.get('/prospects').then(r => r.data)
+export const createProspect = (data) => api.post('/prospects', data).then(r => r.data)
+export const updateProspect = (id, data) => api.put(`/prospects/${id}`, data).then(r => r.data)
+export const updateProspectStage = (id, stage) => api.patch(`/prospects/${id}/stage`, { stage }).then(r => r.data)
+export const convertProspect = (id) => api.patch(`/prospects/${id}/convert`).then(r => r.data)
+export const deleteProspect = (id) => api.delete(`/prospects/${id}`)
+
+// Tasks (FEAT-2002)
+export const getTasks = (params = {}) => api.get('/tasks', { params }).then(r => r.data)
+export const getTaskSummary = () => api.get('/tasks/summary').then(r => r.data)
+export const createTask = (data) => api.post('/tasks', data).then(r => r.data)
+export const updateTask = (id, data) => api.put(`/tasks/${id}`, data).then(r => r.data)
+export const markTaskDone = (id) => api.patch(`/tasks/${id}/done`).then(r => r.data)
+export const deleteTask = (id) => api.delete(`/tasks/${id}`)
 
 export const fmt = {
   inr: (v) => {

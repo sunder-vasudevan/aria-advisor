@@ -350,6 +350,57 @@ class Invoice(Base):
     trade = relationship("Trade", foreign_keys=[trade_id])
 
 
+# Prospect / Opportunity Pipeline (FEAT-2001)
+class ProspectStageEnum(str, enum.Enum):
+    prospect = "prospect"
+    discovery = "discovery"
+    proposal = "proposal"
+    won = "won"
+    lost = "lost"
+
+
+class Prospect(Base):
+    __tablename__ = "prospects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    advisor_id = Column(Integer, ForeignKey("advisors.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    estimated_aum = Column(Float, nullable=True)
+    source = Column(String, nullable=True)  # referral | cold_call | inbound | event | other
+    stage = Column(Enum(ProspectStageEnum), nullable=False, default=ProspectStageEnum.prospect)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    converted_client_id = Column(Integer, ForeignKey("clients.id"), nullable=True)
+
+    advisor = relationship("Advisor", foreign_keys=[advisor_id])
+    converted_client = relationship("Client", foreign_keys=[converted_client_id])
+
+
+# Task Queue (FEAT-2002)
+class TaskStatusEnum(str, enum.Enum):
+    pending = "pending"
+    done = "done"
+
+
+class AdvisorTask(Base):
+    __tablename__ = "advisor_tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    advisor_id = Column(Integer, ForeignKey("advisors.id"), nullable=False, index=True)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=True, index=True)
+    prospect_id = Column(Integer, ForeignKey("prospects.id"), nullable=True, index=True)
+    title = Column(String, nullable=False)
+    due_date = Column(Date, nullable=True)
+    status = Column(Enum(TaskStatusEnum), nullable=False, default=TaskStatusEnum.pending)
+    linked_workflow = Column(String, nullable=True)  # e.g. "onboarding" | "review" | "trade"
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    advisor = relationship("Advisor", foreign_keys=[advisor_id])
+    client = relationship("Client", foreign_keys=[client_id])
+    prospect = relationship("Prospect", foreign_keys=[prospect_id])
+
+
 # Asset Account — linked provider account per client or personal user
 class AssetAccount(Base):
     __tablename__ = "asset_accounts"

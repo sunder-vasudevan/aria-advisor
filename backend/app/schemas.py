@@ -476,3 +476,71 @@ class WebhookEventOut(BaseModel):
     asset_type: str
     payload: dict
     occurred_at: datetime
+
+
+# ─── Prospects (FEAT-2001) ────────────────────────────────────────────────────
+
+class ProspectCreate(BaseModel):
+    name: str
+    estimated_aum: Optional[float] = None
+    source: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class ProspectUpdate(BaseModel):
+    name: Optional[str] = None
+    estimated_aum: Optional[float] = None
+    source: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class ProspectStageUpdate(BaseModel):
+    stage: str  # prospect | discovery | proposal | won | lost
+
+
+class ProspectOut(BaseModel):
+    id: int
+    advisor_id: int
+    name: str
+    estimated_aum: Optional[float]
+    source: Optional[str]
+    stage: str
+    notes: Optional[str]
+    created_at: datetime
+    updated_at: Optional[datetime]
+    converted_client_id: Optional[int]
+
+    class Config:
+        from_attributes = True
+
+
+# ─── Tasks (FEAT-2002) ────────────────────────────────────────────────────────
+
+class TaskCreate(BaseModel):
+    title: str
+    due_date: Optional[date] = None
+    client_id: Optional[int] = None
+    prospect_id: Optional[int] = None
+    linked_workflow: Optional[str] = None
+
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    due_date: Optional[date] = None
+    status: Optional[str] = None
+    linked_workflow: Optional[str] = None
+
+
+class TaskOut(BaseModel):
+    id: int
+    advisor_id: int
+    client_id: Optional[int]
+    prospect_id: Optional[int]
+    title: str
+    due_date: Optional[date]
+    status: str
+    linked_workflow: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

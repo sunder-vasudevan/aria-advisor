@@ -8,7 +8,7 @@ from sqlalchemy import text
 from .database import engine, Base, SessionLocal
 from .routers import clients, copilot, briefing, situation, meeting_prep, interactions, trades, notifications
 from .routers import personal_auth, personal_portfolio, personal_goals, personal_life_events, personal_copilot
-from .routers import advisor_auth, asset_sync, billing
+from .routers import advisor_auth, asset_sync, billing, prospects, tasks
 from . import models          # ensure advisors table registered before personal_models
 from . import personal_models  # personal_users.advisor_id FK references advisors.id
 
@@ -398,10 +398,54 @@ def _run_migrations():
             pass
 
 
+def _run_prospect_task_migrations():
+    """Add prospects + advisor_tasks tables and columns (idempotent)."""
+    with engine.connect() as conn:
+        # prospects table
+        try:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS prospects (
+                    id SERIAL PRIMARY KEY,
+                    advisor_id INTEGER NOT NULL REFERENCES advisors(id),
+                    name VARCHAR NOT NULL,
+                    estimated_aum FLOAT,
+                    source VARCHAR,
+                    stage VARCHAR NOT NULL DEFAULT 'prospect',
+                    notes TEXT,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW(),
+                    converted_client_id INTEGER REFERENCES clients(id)
+                )
+            """))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+
+        # advisor_tasks table
+        try:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS advisor_tasks (
+                    id SERIAL PRIMARY KEY,
+                    advisor_id INTEGER NOT NULL REFERENCES advisors(id),
+                    client_id INTEGER REFERENCES clients(id),
+                    prospect_id INTEGER REFERENCES prospects(id),
+                    title VARCHAR NOT NULL,
+                    due_date DATE,
+                    status VARCHAR NOT NULL DEFAULT 'pending',
+                    linked_workflow VARCHAR,
+                    created_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)  # creates all new tables automatically
     _run_migrations()
+    _run_prospect_task_migrations()
     _run_personal_migrations()
     _run_advisor_migrations()
     _seed_advisors()
@@ -445,6 +489,8 @@ app.include_router(personal_copilot.router)
 app.include_router(advisor_auth.router)
 app.include_router(asset_sync.router)
 app.include_router(billing.router)
+app.include_router(prospects.router)
+app.include_router(tasks.router)
 
 
 @app.api_route("/health", methods=["GET", "HEAD"])

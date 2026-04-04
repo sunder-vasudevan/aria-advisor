@@ -16,6 +16,8 @@ const AdvisorCollabPortalPreview = lazy(() => import('./pages/AdvisorCollabPorta
 const AdvisorWorkspacePreview = lazy(() => import('./pages/AdvisorWorkspacePreview'))
 const AdvisorBillingPreview = lazy(() => import('./pages/AdvisorBillingPreview'))
 const BillingPage = lazy(() => import('./pages/BillingPage'))
+const Opportunities = lazy(() => import('./pages/Opportunities'))
+const TasksPage = lazy(() => import('./pages/TasksPage'))
 
 function PageLoader() {
   return (
@@ -67,6 +69,12 @@ export default function App() {
           } />
           <Route path="/billing" element={
             <RequireAdvisorAuth><BillingPage /></RequireAdvisorAuth>
+          } />
+          <Route path="/opportunities" element={
+            <RequireAdvisorAuth><Opportunities /></RequireAdvisorAuth>
+          } />
+          <Route path="/tasks" element={
+            <RequireAdvisorAuth><TasksPage /></RequireAdvisorAuth>
           } />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
