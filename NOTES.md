@@ -7,7 +7,7 @@
 
 ## Current State
 **Phase:** 2 — USP Depth 🔶 IN PROGRESS
-**Version:** v2.0
+**Version:** v1.6.0
 **Repo:** https://github.com/sunder-vasudevan/aria-advisor
 **Local:** `/Users/sunnyhayes/Daytona/aria-advisor`
 **Mobile:** ✅ Fully responsive (iOS + Android web)
@@ -27,6 +27,33 @@
 - ARIA_USP_WF.md — benchmarking vs Wells Fargo Advisors
 - HELP.md — full feature guide and setup docs
 - PRD.md v1.1 — updated with WF benchmark, FEAT-308/309 added
+
+## What Shipped This Session (2026-04-04 — Session 34)
+
+### FEAT-1009 Advisor Billing Module ✅
+- **Backend:** 3 new models — `AdvisorFeeConfig`, `ClientFeeConfig`, `Invoice` (auto-created via `Base.metadata.create_all`)
+- **Backend:** 9 new endpoints under `/billing`:
+  - Fee config: GET/PUT advisor default, GET/PUT per-client override
+  - Invoices: GET/POST per client, PUT collect, GET all (consolidated), GET personal portal
+- **Invoice generation logic:** AUM % (monthly = AUM × rate / 12), Fixed Retainer, Per-Trade (rate × settled count), Onboarding (one-time)
+- **Collect flow:** Validates `portfolio.cash_balance >= invoice.amount` → deducts from cash_balance + total_value → marks paid
+- **Frontend:** `/billing` page — KPI bar (Receivables, Collected, Overdue, Clients Billed), default fee config editor, invoice table with filter (all/pending/paid/overdue/waived), Collect button
+- **Frontend:** "New Invoice" modal — select client, fee type, rate, period, optional description (for one-off invoices)
+- **Frontend:** "Generate All" — bulk invoice all clients using stored per-client or advisor default config
+- **Frontend:** Client 360° Billing tab (6th desktop tab) — per-client fee override, cash balance indicator, generate + collect per client
+- **Frontend:** Client Portal billing section (read-only) — clients see their invoices
+- **Nav:** Billing link added to advisor top nav + mobile bottom nav
+- **HelpPage:** Billing section added; v1.6.0 in changelog
+
+### DB Cleanup ✅
+- Deleted 24 test clients (IDs 241–264, both Rahul and Hamza)
+- Deleted 29 test personal users (IDs 4, 9–37, 43) with full cascade
+- Fixed Rubén Cervantes personal portal — linked portfolio (ID 74) to personal_user_id 2
+- 12 real personal users remain; 0 test users
+
+## ← START HERE NEXT SESSION
+- ARIA Personal Dashboard revamp (KPI bar, section reorder, goal probability bars) — plan confirmed, build not started
+- (existing parked items below)
 
 ## What Shipped This Session (2026-04-04 — Session 33)
 - **UI Revamp: ClientList v1.5.0** ✅
