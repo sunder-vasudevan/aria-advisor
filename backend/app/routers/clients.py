@@ -93,6 +93,20 @@ def create_client(
     db.add(client)
     db.commit()
     db.refresh(client)
+
+    # Auto-seed a starter portfolio with dummy holdings
+    portfolio = Portfolio(client_id=client.id, total_value=580000, cash_balance=0)
+    db.add(portfolio)
+    db.flush()
+    dummy_holdings = [
+        Holding(portfolio_id=portfolio.id, fund_name="ICICI Pru Bluechip Fund",     fund_category="Large Cap",      fund_house="ICICI Prudential", current_value=250000, target_pct=40, current_pct=42, units_held=1200.50, nav_per_unit=208.25, asset_type="mutual_fund"),
+        Holding(portfolio_id=portfolio.id, fund_name="Parag Parikh Flexi Cap Fund", fund_category="Flexi Cap",      fund_house="PPFAS",            current_value=180000, target_pct=35, current_pct=30, units_held=620.00,  nav_per_unit=290.32, asset_type="mutual_fund"),
+        Holding(portfolio_id=portfolio.id, fund_name="HDFC Short Term Debt Fund",   fund_category="Short Duration", fund_house="HDFC MF",          current_value=150000, target_pct=25, current_pct=28, units_held=3800.00, nav_per_unit=39.47,  asset_type="mutual_fund"),
+    ]
+    db.add_all(dummy_holdings)
+    db.commit()
+    db.refresh(client)
+
     return Client360(
         id=client.id,
         name=client.name,
@@ -419,4 +433,21 @@ def unarchive_client(
     client.is_archived = False
     db.commit()
     return {"archived": False, "client_id": client_id}
-    return Response(status_code=204)
+
+
+@router.patch("/{client_id}/delink")
+def delink_client(
+    client_id: int,
+    db: Session = Depends(get_db),
+    x_advisor_id: Optional[int] = Header(default=None),
+    x_advisor_role: Optional[str] = Header(default=None),
+):
+    """Remove advisor assignment from a client. Client remains in system as unassigned."""
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    if x_advisor_role != "superadmin" and client.advisor_id != x_advisor_id:
+        raise HTTPException(status_code=403, detail="Not authorised to delink this client")
+    client.advisor_id = None
+    db.commit()
+    return {"id": client_id, "needs_advisor": True}
