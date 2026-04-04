@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getTrades, createTradeDraft, submitTrade, getHoldings } from '../api/client'
+import { getTrades, createTradeDraft, submitTrade, getHoldings, refreshClientPrices } from '../api/client'
 import { Plus, ChevronDown, ChevronUp, Send, AlertCircle, X, ArrowUpDown } from 'lucide-react'
 import { fmt } from '../api/client'
 
@@ -336,6 +336,8 @@ export default function TradesPanel({ clientId }) {
   const loadTrades = async () => {
     try {
       setLoading(true)
+      // Refresh prices in background (5-min cached), then load trades + holdings
+      await refreshClientPrices(clientId).catch(() => null)
       const [tradesData, holdingsData] = await Promise.all([
         getTrades(clientId),
         getHoldings(clientId).catch(() => []),

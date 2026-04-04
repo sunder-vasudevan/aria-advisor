@@ -128,6 +128,9 @@ export const updateTask = (id, data) => api.put(`/tasks/${id}`, data).then(r => 
 export const markTaskDone = (id) => api.patch(`/tasks/${id}/done`).then(r => r.data)
 export const deleteTask = (id) => api.delete(`/tasks/${id}`)
 
+// Price refresh
+export const refreshClientPrices = (clientId) => api.post(`/prices/refresh/client/${clientId}`).then(r => r.data)
+
 export const fmt = {
   inr: (v) => {
     if (!v && v !== 0) return '—'
