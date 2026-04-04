@@ -28,25 +28,44 @@
 - HELP.md — full feature guide and setup docs
 - PRD.md v1.1 — updated with WF benchmark, FEAT-308/309 added
 
-## What Shipped This Session (2026-03-28 — Session 30)
-- **INFRA: CLAUDE.md Hierarchy Consolidation** ✅
-  - Global `project-CLAUDE.md` → consolidated into root `/Users/sunnyhayes/.claude/CLAUDE.md` (850 lines, token-optimized)
-  - Directory-specific overrides: `backend/CLAUDE.md`, `frontend/CLAUDE.md`, `e2e-tests/CLAUDE.md` (per-module rules)
-  - Unified 5 scattered memory files (Python 3.14, mobile-first, Safari compat, etc.) into single hierarchy
-  - All standards now auto-loaded by Claude Code based on file path context (no manual inclusion needed)
-  - Format: Tables instead of prose (compact for token efficiency), critical rules extracted from feedback memory
-- **INFRA: Deployment Aliases Fixed** ✅
-  - `aria-advisor.vercel.app` → re-aliased to latest deployment (9h old, was pointing to stale deployment)
-  - `a-ria.vercel.app` → recreated, also points to latest deployment
-  - Both aliases active; short alias works without SSO prompt (primary domain has team SSO enabled — parked for now)
-- **INFRA: Test Data Cleanup** ✅
-  - Deleted all 50 `[TEST]` clients (IDs 62–111) from production DB via direct psql
-  - Cascade delete: 50 clients + 4 portfolios + 46 goals
-  - Remaining: ~40 clean production clients (real data)
-- **Previous:** E2E Test Data Cleanup System (session 29)
-  - Backend: `DELETE /clients/{id}` with cascade (models + endpoint)
-  - Playwright: Global teardown auto-fires after every test run
-  - Memory: Universal E2E naming convention locked (`[TEST]` prefix, `*-test.com` emails)
+## What Shipped This Session (2026-04-04 — Session 33)
+- **UI Revamp: ClientList v1.5.0** ✅
+  - KPI bar: Total AUM, Total Clients, Needs Attention, Pending Trades (mobile + desktop)
+  - Workflow Pipeline strip: 6-stage (Intake → Review → Proposed → Awaiting → Compliance → Done)
+  - Segment filter dropdown (All / HNI / Retail) next to search
+  - Delink button (UserMinus) per row/card → inline amber confirm → removes from state
+- **UI Revamp: Client360 v1.5.0** ✅
+  - 6-metric bar: AUM, Open Tasks, Reviews YTD, Net Flows (Coming Soon), Portal Actions (Coming Soon), Risk Drift (mobile + desktop)
+  - Client Basics wrapping grid (all available fields) at top of Portfolio tab
+  - Workflow Monitor: 6-stage strip above tabs, derived from trade statuses
+  - Activity Timeline in left sidebar below Compliance Snapshot (last 3 interactions)
+  - NotificationBell in desktop topbar (same pattern as ClientList)
+  - "Prep for Meeting" renamed to "Start Review Cycle"
+- **HelpPage updated** (v1.5 features documented)
+- **Deployed:** aria-advisor.vercel.app aliased to new build
+
+## ← START HERE NEXT SESSION
+- ARIA Personal Dashboard revamp (KPI bar, section reorder, goal probability bars) — plan confirmed, build not started
+- (existing parked items below)
+
+## What Shipped This Session (2026-03-28 — Continued)
+- **FEAT: Trade Approval Notifications (Phase 1A)** ✅
+  - Backend: Fixed ActionEnum serialization in notification messages (trade.action → trade.action.value)
+  - Backend: Added portfolio link validation — trade submission now checks portfolio.client_id exists before creating notification (prevents silent failures)
+  - Frontend (aria-personal): Added trade notifications display on Dashboard (fetches + shows alert banner with statuses)
+  - Issue root cause: Joshua's client linked to personal_user_id but portfolio had client_id = NULL (two-way linking broken)
+  - Fix: Added code validation + manual DB fix for Joshua (portfolio.client_id = 112)
+  - E2E gap analysis documented (learning_e2e_test_gaps.md) — 4-layer prevention strategy planned
+- **INFRA: HELP.md Guardrail** ✅
+  - Enforced: All new features must update HELP.md before completion (feedback_help_guardrail.md)
+  - Updated: aria-advisor/HELP.md v1.3 (Trade Workflow Phase 1A section)
+  - Updated: aria-personal/HELP.md v0.2.0 (Trade Approval flow from client perspective)
+- **INFRA: Wrap Protocol Optimization** ✅
+  - Optimized: session_wrap.md 81 → 42 lines (50% token reduction, ~900 → ~450 tokens)
+  - Kept: All 8 mandatory steps, just compressed explanation
+  - Simplified: Command Centre wrap_update.py block (20 lines → 4 lines)
+- **Previous (Session 30):**
+  - CLAUDE.md Hierarchy Consolidation, Deployment Aliases Fixed, Test Data Cleanup
 
 ## ← START HERE NEXT SESSION
 **Parked features:**

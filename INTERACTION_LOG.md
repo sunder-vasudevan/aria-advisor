@@ -16,6 +16,19 @@
 
 ## ARIA Sessions
 
+### Session 33 — 2026-04-04 · Mac mini
+**Goal:** Advisor UI Revamp v1.5.0
+
+| Task | Time |
+|------|------|
+| ClientList: KPI bar + segment filter + delink + workflow strip | ~30 min |
+| Client360: 6-metric bar + Client Basics + Workflow Monitor + Activity Timeline + NotificationBell | ~45 min |
+| HelpPage update + version bump | ~10 min |
+| Deploy + alias + wrap | ~15 min |
+| **Total** | **~1h 40m** |
+
+---
+
 ### Session 1 — 2026-03-13 · Mac mini
 **Goal:** Build entire project from scratch
 
