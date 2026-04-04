@@ -32,8 +32,8 @@ DEFAULT_MFS = [
 ]
 
 DEFAULT_CRYPTO = [
-    {"asset_code": "BTC", "fund_name": "Bitcoin (BTC)",  "fund_category": "Crypto", "fund_house": "External Wallet", "nav": 6800000.0, "units": 100.0},
-    {"asset_code": "ETH", "fund_name": "Ethereum (ETH)", "fund_category": "Crypto", "fund_house": "External Wallet", "nav": 350000.0,  "units": 100.0},
+    {"asset_code": "BTC", "fund_name": "Bitcoin (BTC)",  "fund_category": "Crypto", "fund_house": "External Wallet", "nav": 6800000.0, "units": 5.0},
+    {"asset_code": "ETH", "fund_name": "Ethereum (ETH)", "fund_category": "Crypto", "fund_house": "External Wallet", "nav": 350000.0,  "units": 5.0},
 ]
 
 
