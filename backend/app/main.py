@@ -450,7 +450,7 @@ def _backfill_default_holdings():
             portfolios = conn.execute(text("""
                 SELECT p.id, p.client_id
                 FROM portfolios p
-                WHERE (SELECT COUNT(*) FROM holdings h WHERE h.portfolio_id = p.id) < 21
+                WHERE (SELECT COUNT(*) FROM holdings h WHERE h.portfolio_id = p.id) < 22
             """)).fetchall()
 
             for portfolio_id, client_id in portfolios:

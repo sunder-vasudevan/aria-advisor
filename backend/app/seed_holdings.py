@@ -31,11 +31,14 @@ DEFAULT_MFS = [
     {"asset_code": "INF209K01VY3", "fund_name": "Aditya Birla Money Manager Fund",    "fund_category": "Money Market",         "fund_house": "Aditya Birla",   "nav": 311.25,  "units": 100.0},
 ]
 
-DEFAULT_BITCOIN = {"asset_code": "BTC", "fund_name": "Bitcoin (BTC)", "fund_category": "Crypto", "fund_house": "External Wallet", "nav": 6800000.0, "units": 0.05}
+DEFAULT_CRYPTO = [
+    {"asset_code": "BTC", "fund_name": "Bitcoin (BTC)",  "fund_category": "Crypto", "fund_house": "External Wallet", "nav": 6800000.0, "units": 100.0},
+    {"asset_code": "ETH", "fund_name": "Ethereum (ETH)", "fund_category": "Crypto", "fund_house": "External Wallet", "nav": 350000.0,  "units": 100.0},
+]
 
 
 def build_default_holdings(portfolio_id: int) -> list[dict]:
-    """Return a list of holding dicts ready for INSERT, covering 10 stocks + 10 MFs + BTC."""
+    """Return a list of holding dicts ready for INSERT, covering 10 stocks + 10 MFs + BTC + ETH."""
     rows = []
     for item in DEFAULT_STOCKS:
         rows.append({
@@ -67,19 +70,19 @@ def build_default_holdings(portfolio_id: int) -> list[dict]:
             "target_pct": 3.0,
             "current_pct": 3.0,
         })
-    btc = DEFAULT_BITCOIN
-    rows.append({
-        "portfolio_id": portfolio_id,
-        "asset_code": btc["asset_code"],
-        "asset_type": "crypto",
-        "fund_name": btc["fund_name"],
-        "fund_category": btc["fund_category"],
-        "fund_house": btc["fund_house"],
-        "units_held": btc["units"],
-        "nav_per_unit": btc["nav"],
-        "price_per_unit": btc["nav"],
-        "current_value": round(btc["units"] * btc["nav"], 2),
-        "target_pct": 5.0,
-        "current_pct": 5.0,
-    })
+    for c in DEFAULT_CRYPTO:
+        rows.append({
+            "portfolio_id": portfolio_id,
+            "asset_code": c["asset_code"],
+            "asset_type": "crypto",
+            "fund_name": c["fund_name"],
+            "fund_category": c["fund_category"],
+            "fund_house": c["fund_house"],
+            "units_held": c["units"],
+            "nav_per_unit": c["nav"],
+            "price_per_unit": c["nav"],
+            "current_value": round(c["units"] * c["nav"], 2),
+            "target_pct": 5.0,
+            "current_pct": 5.0,
+        })
     return rows
