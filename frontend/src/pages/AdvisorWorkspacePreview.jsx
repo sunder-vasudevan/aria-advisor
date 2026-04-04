@@ -265,6 +265,7 @@ export default function AdvisorWorkspacePreview() {
                 <div className="flex items-center gap-3">
                     <span className="text-sm text-gray-600 hidden sm:block">{advisorName}</span>
                     <NotificationBell notifications={notifications} onOpen={() => setNotifOpen(true)} unreadCount={unreadCount} />
+                    <Link to="/billing" className="text-xs font-semibold text-gray-500 hover:text-gray-800 hidden sm:block">Billing</Link>
                     <Link to="/" className="text-xs font-semibold text-[#1D6FDB] hover:underline hidden sm:block">← Dashboard</Link>
                 </div>
             </header>
