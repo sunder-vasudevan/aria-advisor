@@ -855,6 +855,38 @@ export default function Client360() {
                     </div>
                   )}
                 </div>
+
+                {/* Compliance Snapshot */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Compliance Snapshot</div>
+                  <div className="space-y-2">
+                    {[
+                      {
+                        label: 'KYC',
+                        status: client.pan_number ? 'Verified' : 'Pending',
+                        ok: !!client.pan_number,
+                        detail: client.pan_number ? `PAN ${client.pan_number}` : 'PAN not on file',
+                      },
+                      {
+                        label: 'Suitability',
+                        status: client.risk_score ? 'Confirmed' : 'Pending',
+                        ok: !!client.risk_score,
+                        detail: client.risk_score ? `Risk score ${client.risk_score}/10` : 'Risk assessment pending',
+                      },
+                    ].map(({ label, status, ok, detail }) => (
+                      <div key={label} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+                        <div>
+                          <div className="text-sm font-medium text-gray-800">{label}</div>
+                          <div className="text-xs text-gray-400">{detail}</div>
+                        </div>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${ok ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {ok ? <CheckCircle size={11} /> : <Clock size={11} />}
+                          {status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}

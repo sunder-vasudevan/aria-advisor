@@ -136,9 +136,10 @@ function NotificationBell() {
   }
 
   const typeConfig = {
-    trade_submitted: { emoji: '🔔', borderColor: 'border-amber-400', bgUnread: 'bg-amber-50' },
-    trade_approved:  { emoji: '✅', borderColor: 'border-green-400', bgUnread: 'bg-green-50' },
-    trade_rejected:  { emoji: '❌', borderColor: 'border-red-400', bgUnread: 'bg-red-50' },
+    trade_submitted:  { emoji: '🔔', borderColor: 'border-amber-400', bgUnread: 'bg-amber-50' },
+    trade_approved:   { emoji: '✅', borderColor: 'border-green-400', bgUnread: 'bg-green-50' },
+    trade_rejected:   { emoji: '❌', borderColor: 'border-red-400', bgUnread: 'bg-red-50' },
+    client_delinked:  { emoji: '🔗', borderColor: 'border-orange-400', bgUnread: 'bg-orange-50' },
   }
 
   const badgeLabel = unreadCount > 9 ? '9+' : String(unreadCount)
