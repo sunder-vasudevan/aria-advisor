@@ -4,7 +4,7 @@ Price Refresh Router — fetches live NAV/prices and updates holdings.
 Sources:
   - Mutual funds (ISIN INF*): AMFI India flat file (daily, free, no key)
   - Crypto (BTC, ETH):        CoinGecko simple price API (INR, no key, ~20s refresh)
-  - Stocks (NSE tickers):     yfinance .NS suffix (demo-grade, INR)
+  - Stocks (NSE tickers):     jugaad-data (EOD close from NSE, free, no key)
 
 Cache: in-process dict, 5-minute TTL. Prevents hammering free-tier APIs.
 """
@@ -126,7 +126,7 @@ def _fetch_crypto_inr(codes: list[str]) -> dict[str, float]:
 
 
 # ---------------------------------------------------------------------------
-# Source: yfinance (NSE stocks)
+# Source: jugaad-data (NSE stocks — EOD close price)
 # ---------------------------------------------------------------------------
 def _fetch_stock_inr(tickers: list[str]) -> dict[str, float]:
     needed = [t for t in tickers if not _cached(t)]
@@ -135,20 +135,28 @@ def _fetch_stock_inr(tickers: list[str]) -> dict[str, float]:
         return result
 
     try:
-        import yfinance as yf
-        ns_tickers = [f"{t}.NS" for t in needed]
-        data = yf.download(ns_tickers, period="1d", interval="1d", progress=False, auto_adjust=True)
-        close = data["Close"] if "Close" in data else data
-        for t, ns in zip(needed, ns_tickers):
+        from datetime import date, timedelta
+        from jugaad_data.nse import stock_df
+
+        # Look back up to 7 days to handle weekends + market holidays
+        to_date = date.today()
+        from_date = to_date - timedelta(days=7)
+
+        for ticker in needed:
             try:
-                price = float(close[ns].dropna().iloc[-1])
-                _store(t, price)
-                result[t] = price
-            except Exception:
-                pass
+                df = stock_df(symbol=ticker, from_date=from_date, to_date=to_date)
+                if df is not None and not df.empty and "CLOSE" in df.columns:
+                    price = float(df["CLOSE"].dropna().iloc[0])  # most recent first
+                    _store(ticker, price)
+                    result[ticker] = price
+                else:
+                    logger.warning("jugaad-data: no data for %s", ticker)
+            except Exception as e:
+                logger.warning("jugaad-data fetch failed for %s: %s", ticker, e)
+
         return result
     except Exception as e:
-        logger.warning("yfinance fetch failed: %s", e)
+        logger.warning("jugaad-data fetch failed: %s", e)
         return result
 
 
@@ -247,6 +255,7 @@ def cache_status():
     """Show what's currently in the price cache."""
     now = time.time()
     return {
+        "stock_provider": "jugaad-data (NSE EOD)",
         "entries": [
             {"code": k, "price_inr": v[0], "age_seconds": round(now - v[1])}
             for k, v in _CACHE.items()
