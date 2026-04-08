@@ -7,7 +7,7 @@
 
 ## Current State
 **Phase:** 2 — USP Depth 🔶 IN PROGRESS
-**Version:** v1.6.0
+**Version:** v2.2.0
 **Repo:** https://github.com/sunder-vasudevan/aria-advisor
 **Local:** `/Users/sunnyhayes/Daytona/aria-advisor`
 **Mobile:** ✅ Fully responsive (iOS + Android web)
@@ -51,9 +51,24 @@
 - Fixed Rubén Cervantes personal portal — linked portfolio (ID 74) to personal_user_id 2
 - 12 real personal users remain; 0 test users
 
+## What Shipped This Session (2026-04-08 — Session 35)
+
+### FEAT-2006: yfinance → jugaad-data (NSE EOD prices) ✅
+- Replaced yfinance with jugaad-data v0.33.1 (EOD close from NSE, 7-day lookback)
+- All 10 NSE stocks verified live; pandas added; yfinance removed
+- cache/status shows `stock_provider: jugaad-data (NSE EOD)`
+
+### FEAT-2007: Purchase price, execution price & unrealised P&L ✅
+- `holdings.avg_purchase_price`: WACC updated on every buy settlement
+- `trades.execution_price`: per-unit price at settlement (buy + sell)
+- Sell: avg_purchase_price unchanged; units/current_value correctly reduced
+- Holdings endpoints: `unrealised_pnl` + `unrealised_pnl_pct` computed on the fly (not stored)
+- HoldingsTable: P&L % pill on card (▲/▼ green/red) + P&L drawer with avg buy price breakdown
+
 ## ← START HERE NEXT SESSION
 - ARIA Personal Dashboard revamp (KPI bar, section reorder, goal probability bars) — plan confirmed, build not started
-- (existing parked items below)
+- Mobile test FEAT-2007 P&L display at 375px
+- HELP.md needs FEAT-2006 + FEAT-2007 sections added (flagged, not done yet)
 
 ## What Shipped This Session (2026-04-04 — Session 33)
 - **UI Revamp: ClientList v1.5.0** ✅
