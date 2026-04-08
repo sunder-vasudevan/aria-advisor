@@ -120,6 +120,7 @@ class Holding(Base):
     units_held = Column(Float, nullable=True)
     nav_per_unit = Column(Float, nullable=True)   # MF: NAV; others: price_per_unit
     price_per_unit = Column(Float, nullable=True)  # generic alias for non-MF assets
+    avg_purchase_price = Column(Float, nullable=True)  # weighted avg cost basis (WACC)
 
     portfolio = relationship("Portfolio", back_populates="holdings")
 
@@ -235,6 +236,7 @@ class Trade(Base):
     quantity = Column(Float, nullable=False)
     estimated_value = Column(Float, nullable=False)  # Snapshot at creation in INR
     actual_value = Column(Float, nullable=True)  # Set at execution
+    execution_price = Column(Float, nullable=True)  # Per-unit price at settlement
     status = Column(Enum(TradeStatusEnum), nullable=False, default=TradeStatusEnum.draft)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     submitted_at = Column(DateTime, nullable=True)

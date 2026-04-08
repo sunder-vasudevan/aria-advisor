@@ -406,6 +406,15 @@ def _run_migrations():
         except Exception:
             pass
 
+    # FEAT-2007: cost basis + execution price
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE holdings ADD COLUMN IF NOT EXISTS avg_purchase_price FLOAT"))
+            conn.execute(text("ALTER TABLE trades ADD COLUMN IF NOT EXISTS execution_price FLOAT"))
+            conn.commit()
+        except Exception:
+            pass
+
 
 def _run_prospect_task_migrations():
     """Add prospects + advisor_tasks tables and columns (idempotent)."""

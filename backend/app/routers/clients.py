@@ -169,12 +169,27 @@ def update_client(client_id: int, payload: ClientUpdate, db: Session = Depends(g
     )
 
 
+def _enrich_holdings_pnl(holdings):
+    """Inject computed unrealised_pnl + unrealised_pnl_pct into HoldingOut dicts."""
+    result = []
+    for h in holdings:
+        d = schemas.HoldingOut.model_validate(h).model_dump()
+        current_price = h.nav_per_unit or h.price_per_unit
+        avg = h.avg_purchase_price
+        units = h.units_held or 0.0
+        if avg and avg > 0 and current_price and units > 0:
+            d["unrealised_pnl"] = round((current_price - avg) * units, 2)
+            d["unrealised_pnl_pct"] = round(((current_price - avg) / avg) * 100, 2)
+        result.append(d)
+    return result
+
+
 @router.get("/{client_id}/holdings", response_model=List[HoldingOut])
 def get_holdings(client_id: int, db: Session = Depends(get_db)):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client or not client.portfolio:
         raise HTTPException(status_code=404, detail="Client or portfolio not found")
-    return client.portfolio.holdings
+    return _enrich_holdings_pnl(client.portfolio.holdings)
 
 
 @router.get("/{client_id}/goals", response_model=List[GoalOut])

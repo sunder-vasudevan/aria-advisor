@@ -23,6 +23,9 @@ class HoldingOut(BaseModel):
     current_pct: float
     units_held: Optional[float] = None
     nav_per_unit: Optional[float] = None
+    avg_purchase_price: Optional[float] = None
+    unrealised_pnl: Optional[float] = None
+    unrealised_pnl_pct: Optional[float] = None
 
     class Config:
         from_attributes = True
@@ -357,6 +360,7 @@ class TradeOut(BaseModel):
     quantity: float
     estimated_value: float
     actual_value: Optional[float]
+    execution_price: Optional[float] = None
     status: str  # draft | pending_approval | approved | settled | rejected | cancelled
     created_at: datetime
     submitted_at: Optional[datetime]

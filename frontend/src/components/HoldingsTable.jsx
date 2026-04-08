@@ -110,15 +110,39 @@ function HoldingDrawer({ holding, totalValue, onClose }) {
               <div className="border border-gray-100 rounded-xl p-4">
                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">NAV Detail</div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600">NAV per unit</span>
+                  <span className="text-sm text-gray-600">Current price</span>
                   <span className="text-sm font-bold text-gray-900">₹{holding.nav_per_unit.toFixed(2)}</span>
                 </div>
+                {holding.avg_purchase_price != null && (
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-600">Avg buy price</span>
+                    <span className="text-sm font-bold text-gray-900">₹{holding.avg_purchase_price.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm text-gray-600">Units held</span>
                   <span className="text-sm font-bold text-gray-900">{holding.units_held.toFixed(3)}</span>
                 </div>
                 <div className="bg-navy-50 rounded-lg px-3 py-2 text-xs text-navy-700 font-medium text-center">
                   ₹{holding.nav_per_unit.toFixed(2)} / unit · {holding.units_held.toFixed(3)} units
+                </div>
+              </div>
+            )}
+
+            {holding.unrealised_pnl != null && holding.unrealised_pnl_pct != null && (
+              <div className={`rounded-xl p-4 ${holding.unrealised_pnl >= 0 ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'}`}>
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Unrealised P&amp;L</div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600">P&amp;L (₹)</span>
+                  <span className={`text-sm font-bold ${holding.unrealised_pnl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                    {holding.unrealised_pnl >= 0 ? '+' : ''}{fmt.inr(holding.unrealised_pnl)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">P&amp;L (%)</span>
+                  <span className={`text-sm font-bold ${holding.unrealised_pnl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                    {holding.unrealised_pnl >= 0 ? '▲' : '▼'} {Math.abs(holding.unrealised_pnl_pct).toFixed(2)}%
+                  </span>
                 </div>
               </div>
             )}
@@ -146,6 +170,8 @@ export default function HoldingsTable({ holdings }) {
           const absDrift = Math.abs(drift)
           const isDrifted = absDrift > 2
           const catColor = CATEGORY_COLORS[h.fund_category] || 'bg-gray-100 text-gray-600 border-gray-200'
+          const hasPnl = h.unrealised_pnl != null && h.unrealised_pnl_pct != null
+          const pnlPositive = hasPnl && h.unrealised_pnl >= 0
 
           return (
             <div
@@ -173,12 +199,18 @@ export default function HoldingsTable({ holdings }) {
                 </div>
               </div>
 
-              {/* Value */}
+              {/* Value + P&L */}
               <div className="text-right flex-shrink-0">
                 <div className="text-xs font-bold text-gray-900">{fmt.inr(h.current_value)}</div>
-                <div className="text-xs text-gray-400 mt-0.5">
-                  {totalValue > 0 ? ((h.current_value / totalValue) * 100).toFixed(1) : 0}% of portfolio
-                </div>
+                {hasPnl ? (
+                  <div className={`text-xs font-semibold mt-0.5 ${pnlPositive ? 'text-green-600' : 'text-red-500'}`}>
+                    {pnlPositive ? '▲' : '▼'} {Math.abs(h.unrealised_pnl_pct).toFixed(1)}%
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    {totalValue > 0 ? ((h.current_value / totalValue) * 100).toFixed(1) : 0}% of portfolio
+                  </div>
+                )}
               </div>
 
               {/* Allocation bar — hidden on very small screens */}

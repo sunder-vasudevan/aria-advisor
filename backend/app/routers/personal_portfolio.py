@@ -35,6 +35,11 @@ def _portfolio_out(p: Portfolio) -> dict:
     total = p.total_value or 0
     holdings = []
     for h in p.holdings:
+        current_price = h.nav_per_unit or h.price_per_unit
+        avg = h.avg_purchase_price
+        units = h.units_held or 0.0
+        unrealised_pnl = round((current_price - avg) * units, 2) if (avg and avg > 0 and current_price and units > 0) else None
+        unrealised_pnl_pct = round(((current_price - avg) / avg) * 100, 2) if (avg and avg > 0 and current_price) else None
         holdings.append({
             "id": h.id,
             "fund_name": h.fund_name,
@@ -45,6 +50,9 @@ def _portfolio_out(p: Portfolio) -> dict:
             "current_pct": h.current_pct,
             "units_held": h.units_held,
             "nav_per_unit": h.nav_per_unit,
+            "avg_purchase_price": h.avg_purchase_price,
+            "unrealised_pnl": unrealised_pnl,
+            "unrealised_pnl_pct": unrealised_pnl_pct,
         })
     return {
         "id": p.id,

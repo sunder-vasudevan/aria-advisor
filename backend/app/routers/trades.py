@@ -243,6 +243,9 @@ def approve_trade(
     trade.actual_value = trade.estimated_value  # Mock: use estimated for actual
 
     # Update portfolio balances on settlement
+    exec_price = trade.estimated_value / trade.quantity if trade.quantity else 0.0
+    trade.execution_price = exec_price
+
     if portfolio:
         if trade.action.value == "buy":
             portfolio.cash_balance = (portfolio.cash_balance or 0.0) - trade.estimated_value
@@ -251,8 +254,12 @@ def approve_trade(
                 None,
             )
             if holding:
-                holding.units_held = (holding.units_held or 0.0) + trade.quantity
-                holding.current_value = holding.units_held * (holding.nav_per_unit or (trade.estimated_value / trade.quantity))
+                old_units = holding.units_held or 0.0
+                old_avg = holding.avg_purchase_price or exec_price
+                new_units = old_units + trade.quantity
+                holding.avg_purchase_price = round(((old_units * old_avg) + (trade.quantity * exec_price)) / new_units, 4) if new_units else exec_price
+                holding.units_held = new_units
+                holding.current_value = round(new_units * (holding.nav_per_unit or exec_price), 2)
             else:
                 db.add(models.Holding(
                     portfolio_id=portfolio.id,
@@ -263,16 +270,18 @@ def approve_trade(
                     target_pct=0.0,
                     current_pct=0.0,
                     units_held=trade.quantity,
-                    nav_per_unit=trade.estimated_value / trade.quantity if trade.quantity else 0,
+                    nav_per_unit=exec_price,
+                    avg_purchase_price=exec_price,
                 ))
-        else:  # sell
+        else:  # sell — avg_purchase_price unchanged (cost basis stays)
             holding = next(
                 (h for h in portfolio.holdings if h.asset_code and h.asset_code.upper() == trade.asset_code.upper()),
                 None,
             )
             if holding:
-                holding.units_held = (holding.units_held or 0.0) - trade.quantity
-                holding.current_value = max(0.0, (holding.current_value or 0.0) - trade.estimated_value)
+                remaining_units = max(0.0, (holding.units_held or 0.0) - trade.quantity)
+                holding.units_held = remaining_units
+                holding.current_value = round(remaining_units * (holding.nav_per_unit or exec_price), 2)
             portfolio.cash_balance = (portfolio.cash_balance or 0.0) + trade.estimated_value
 
     # Log settlement (mock banking)
