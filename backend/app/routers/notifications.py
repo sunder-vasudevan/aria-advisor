@@ -85,9 +85,10 @@ def mark_notification_read(
     x_advisor_id: int = Header(None, alias="X-Advisor-Id"),
     x_personal_user_id: int = Header(None, alias="X-Personal-User-Id"),
 ):
-    """
-    Mark notification as read (for both advisor and personal users).
-    """
+    """Mark notification as read (for both advisor and personal users)."""
+    if not x_advisor_id and not x_personal_user_id:
+        raise HTTPException(status_code=401, detail="X-Advisor-Id or X-Personal-User-Id header required")
+
     notification = db.query(models.Notification).filter(
         models.Notification.id == notification_id
     ).first()
@@ -95,7 +96,6 @@ def mark_notification_read(
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
 
-    # Verify ownership
     if x_advisor_id and notification.advisor_id != x_advisor_id:
         raise HTTPException(status_code=403, detail="Access denied")
     if x_personal_user_id and notification.personal_user_id != x_personal_user_id:
@@ -114,9 +114,10 @@ def delete_notification(
     x_advisor_id: int = Header(None, alias="X-Advisor-Id"),
     x_personal_user_id: int = Header(None, alias="X-Personal-User-Id"),
 ):
-    """
-    Delete notification (for both advisor and personal users).
-    """
+    """Delete notification (for both advisor and personal users)."""
+    if not x_advisor_id and not x_personal_user_id:
+        raise HTTPException(status_code=401, detail="X-Advisor-Id or X-Personal-User-Id header required")
+
     notification = db.query(models.Notification).filter(
         models.Notification.id == notification_id
     ).first()
@@ -124,7 +125,6 @@ def delete_notification(
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
 
-    # Verify ownership
     if x_advisor_id and notification.advisor_id != x_advisor_id:
         raise HTTPException(status_code=403, detail="Access denied")
     if x_personal_user_id and notification.personal_user_id != x_personal_user_id:

@@ -13,6 +13,12 @@ from ..auth import get_current_personal_user
 
 router = APIRouter(prefix="/personal/copilot", tags=["personal-copilot"])
 
+
+def _sanitize(value: str | None) -> str:
+    if not value:
+        return ""
+    return value.replace("\n", " ").replace("\r", " ").strip()
+
 SYSTEM_PROMPT = """You are ARIA, a personal finance assistant. You are helping a self-directed individual manage their own investments, goals, and financial life.
 
 Speak directly and personally: use "your portfolio", "you hold", "your goal", "you". Never say "the client" or use third-person framing.
@@ -31,7 +37,7 @@ def build_personal_context(user: PersonalUser, db: Session) -> str:
 
     lines = [
         "YOUR PROFILE",
-        f"Name: {user.display_name}",
+        f"Name: {_sanitize(user.display_name)}",
         f"Risk Score: {user.risk_score}/10 ({user.risk_category})" if user.risk_score else "Risk profile: not set",
         "",
     ]
@@ -51,7 +57,7 @@ def build_personal_context(user: PersonalUser, db: Session) -> str:
         ]
         for h in p.holdings:
             lines.append(
-                f"  • {h.fund_name} ({h.fund_house}) — {h.fund_category} — "
+                f"  • {_sanitize(h.fund_name)} ({_sanitize(h.fund_house)}) — {_sanitize(h.fund_category)} — "
                 f"₹{h.current_value/100000:.1f}L — {h.current_pct:.0f}% (target {h.target_pct:.0f}%)"
             )
     else:
@@ -65,7 +71,7 @@ def build_personal_context(user: PersonalUser, db: Session) -> str:
             target_str = (f"₹{g.target_amount/100000:.1f}L" if g.target_amount < 10000000
                           else f"₹{g.target_amount/10000000:.2f}Cr")
             lines.append(
-                f"  • {g.goal_name}: Target {target_str} by {g.target_date} — "
+                f"  • {_sanitize(g.goal_name)}: Target {target_str} by {g.target_date} — "
                 f"Probability: {g.probability_pct:.0f}% — Monthly SIP: ₹{g.monthly_sip:,.0f}"
             )
     else:
@@ -76,7 +82,7 @@ def build_personal_context(user: PersonalUser, db: Session) -> str:
     if events:
         for e in events:
             days_ago = (today - e.event_date).days
-            lines.append(f"  • {e.event_type.replace('_', ' ').title()}: {e.event_date} ({days_ago}d ago) — {e.notes or ''}")
+            lines.append(f"  • {_sanitize(e.event_type).replace('_', ' ').title()}: {e.event_date} ({days_ago}d ago) — {_sanitize(e.notes)}")
     else:
         lines.append("  None recorded.")
 

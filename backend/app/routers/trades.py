@@ -429,18 +429,11 @@ def list_personal_trades_jwt(
 def list_personal_trades(
     client_id: int,
     db: Session = Depends(get_db),
-    x_client_id: int = Header(None, alias="X-Client-Id"),
+    current_user=Depends(get_current_personal_user),
 ):
-    """
-    Client views their trades (ARIA Personal perspective).
-
-    Returns: All trades for this client
-    """
-    if not x_client_id:
-        raise HTTPException(status_code=401, detail="X-Client-Id header required")
-
-    # Verify client is viewing their own trades
-    if x_client_id != client_id:
+    """Client views their trades (ARIA Personal perspective)."""
+    resolved_client_id = _get_client_id_for_personal_user(current_user.id, db)
+    if not resolved_client_id or resolved_client_id != client_id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     trades = db.query(models.Trade).filter(

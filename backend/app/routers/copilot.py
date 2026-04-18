@@ -1,6 +1,7 @@
 import os
 from datetime import date
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 import anthropic
 
@@ -8,8 +9,15 @@ from ..database import get_db
 from ..models import Client, AuditLog
 from ..schemas import CopilotRequest, CopilotResponse
 from ..urgency import compute_urgency
+from .clients import _get_advisor_id, _check_client_access
 
 router = APIRouter(prefix="/clients", tags=["copilot"])
+
+
+def _sanitize(value: str | None) -> str:
+    if not value:
+        return ""
+    return value.replace("\n", " ").replace("\r", " ").strip()
 
 SYSTEM_PROMPT = """You are a cautious senior financial advisor assistant supporting a Relationship Manager (RM) at an Indian bank. You have full access to the client's portfolio, goals, holdings, life events, and risk profile.
 
@@ -47,9 +55,9 @@ def build_client_context(client) -> str:
 
     lines = [
         f"CLIENT PROFILE",
-        f"Name: {client.name}",
+        f"Name: {_sanitize(client.name)}",
         f"Age: {client.age}",
-        f"Segment: {client.segment}",
+        f"Segment: {_sanitize(client.segment)}",
         f"Risk Score: {client.risk_score}/10 ({client.risk_category})",
         "",
         "PORTFOLIO",
@@ -68,7 +76,7 @@ def build_client_context(client) -> str:
         ]
         for h in p.holdings:
             lines.append(
-                f"  • {h.fund_name} ({h.fund_house}) — {h.fund_category} — "
+                f"  • {_sanitize(h.fund_name)} ({_sanitize(h.fund_house)}) — {_sanitize(h.fund_category)} — "
                 f"₹{h.current_value / 100000:.1f}L — {h.current_pct:.0f}% of portfolio (target {h.target_pct:.0f}%)"
             )
 
@@ -79,7 +87,7 @@ def build_client_context(client) -> str:
         target_str = (f"₹{g.target_amount / 100000:.1f}L" if g.target_amount < 10000000
                       else f"₹{g.target_amount / 10000000:.2f}Cr")
         lines.append(
-            f"  • {g.goal_name}: Target {target_str} by {g.target_date} — "
+            f"  • {_sanitize(g.goal_name)}: Target {target_str} by {g.target_date} — "
             f"Probability: {g.probability_pct:.0f}% — Monthly SIP: ₹{g.monthly_sip:,.0f} — {sip_status}"
         )
 
@@ -87,7 +95,7 @@ def build_client_context(client) -> str:
     if client.life_events:
         for e in client.life_events:
             days_ago = (today - e.event_date).days
-            lines.append(f"  • {e.event_type.replace('_', ' ').title()}: {e.event_date} ({days_ago}d ago) — {e.notes or ''}")
+            lines.append(f"  • {_sanitize(e.event_type).replace('_', ' ').title()}: {e.event_date} ({days_ago}d ago) — {_sanitize(e.notes)}")
     else:
         lines.append("  None recorded")
 
@@ -99,10 +107,13 @@ def copilot_chat(
     client_id: int,
     request: CopilotRequest,
     db: Session = Depends(get_db),
+    advisor_id: int = Depends(_get_advisor_id),
+    x_advisor_role: Optional[str] = Header(default=None),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
+    _check_client_access(client, advisor_id, x_advisor_role)
 
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:

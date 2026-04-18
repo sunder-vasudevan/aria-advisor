@@ -6,6 +6,8 @@ from datetime import datetime, date
 
 from ..database import SessionLocal
 from .. import models
+from ..personal_models import PersonalUser
+from ..auth import get_current_personal_user
 
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -329,13 +331,12 @@ def get_all_invoices(
 @router.get("/personal/me/invoices")
 def get_personal_invoices(
     db: Session = Depends(get_db),
-    x_personal_user_id: int = Header(..., alias="X-Personal-User-Id"),
+    current_user: PersonalUser = Depends(get_current_personal_user),
 ):
-    # Resolve client_id from personal_user_id
     from sqlalchemy import text
     row = db.execute(
         text("SELECT id FROM clients WHERE personal_user_id = :uid LIMIT 1"),
-        {"uid": x_personal_user_id}
+        {"uid": current_user.id}
     ).fetchone()
     if not row:
         return {"success": True, "data": []}
