@@ -132,9 +132,8 @@ def _generate_risk_pdf(client: Client) -> bytes:
     # Watermark
     pdf.set_font("Helvetica", "B", 42)
     pdf.set_text_color(220, 220, 220)
-    pdf.rotate(45, 55, 190)
-    pdf.text(30, 200, "PENDING SIGNATURE")
-    pdf.rotate(0)
+    with pdf.rotation(45, 55, 190):
+        pdf.text(30, 200, "PENDING SIGNATURE")
 
     return bytes(pdf.output())
 

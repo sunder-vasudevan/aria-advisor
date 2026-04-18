@@ -29,6 +29,18 @@ def _check_client_access(client, advisor_id: int, x_advisor_role: Optional[str] 
         raise HTTPException(status_code=403, detail="Access denied")
 
 
+def _kyc_fields(client) -> dict:
+    return {
+        "kyc_status": client.kyc_status or "not_started",
+        "nominee_name": client.nominee_name,
+        "nominee_relation": client.nominee_relation,
+        "nominee_dob": client.nominee_dob,
+        "nominee_phone": client.nominee_phone,
+        "fatca_declaration": client.fatca_declaration or False,
+        "fatca_declared_at": client.fatca_declared_at,
+    }
+
+
 @router.get("", response_model=List[ClientListItem])
 def list_clients(
     db: Session = Depends(get_db),
@@ -92,6 +104,7 @@ def get_client(
         life_events=client.life_events,
         urgency_flags=flags,
         lifecycle_stage=client.lifecycle_stage or "lead",
+        **_kyc_fields(client),
     )
 
 
@@ -150,6 +163,7 @@ def create_client(
         life_events=[],
         urgency_flags=[],
         lifecycle_stage=client.lifecycle_stage or "lead",
+        **_kyc_fields(client),
     )
 
 
@@ -196,6 +210,7 @@ def update_client(
         life_events=client.life_events,
         urgency_flags=flags,
         lifecycle_stage=client.lifecycle_stage or "lead",
+        **_kyc_fields(client),
     )
 
 
@@ -311,6 +326,7 @@ def create_portfolio(
         life_events=client.life_events,
         urgency_flags=flags,
         lifecycle_stage=client.lifecycle_stage or "lead",
+        **_kyc_fields(client),
     )
 
 
