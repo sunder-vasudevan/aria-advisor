@@ -13,7 +13,7 @@ cd "$REPO_ROOT"
 DEPLOY_OUTPUT=$(vercel --prod --yes 2>&1)
 echo "$DEPLOY_OUTPUT"
 
-URL=$(echo "$DEPLOY_OUTPUT" | grep "Production:" | grep -oE "https://[^ ]+")
+URL=$(echo "$DEPLOY_OUTPUT" | grep -oE "https://aria-advisor-[a-z0-9]+-[a-z0-9-]+\.vercel\.app" | head -1 | tr -d '[:space:]')
 
 if [ -z "$URL" ]; then
   echo "❌ Could not extract deployment URL. Alias manually."
