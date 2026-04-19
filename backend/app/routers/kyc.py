@@ -92,12 +92,12 @@ def _generate_risk_pdf(client: Client) -> bytes:
     pdf.ln(4)
 
     fields = [
-        ("Client Name", client.name or "—"),
+        ("Client Name", client.name or "N/A"),
         ("PAN Number", client.pan_number or "Not provided"),
         ("Date of Birth", str(client.date_of_birth) if client.date_of_birth else "Not provided"),
-        ("Segment", client.segment or "—"),
+        ("Segment", client.segment or "N/A"),
         ("Risk Score", f"{client.risk_score} / 10"),
-        ("Risk Category", client.risk_category or "—"),
+        ("Risk Category", client.risk_category or "N/A"),
         ("Generated On", datetime.utcnow().strftime("%d %b %Y")),
     ]
 
