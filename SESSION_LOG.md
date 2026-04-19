@@ -2,6 +2,7 @@
 
 | # | Date | Goal | Shipped | Time (est.) | Notes |
 |---|------|------|---------|-------------|-------|
+| 38 | 2026-04-19 | Test KYC Phase 1 + fix bugs | 11/11 automated tests pass. 3 bugs found + fixed: Client360 GET missing KYC fields, pdf.rotate() removed in fpdf2, em-dash unsupported in Helvetica. Test report written. DB cleanup done. | ~2 hrs | Render webhook missed 2 deploys — manual trigger needed twice. All bugs fixed and verified. |
 | 1 | 2026-03-13 | Build entire project from scratch (Phase 1 + 2) | Full backend (FastAPI, models, seed, all routers + Claude API). Full frontend (Client List, Client 360, all components). PRD.md. Pushed to GitHub. | ~90 min | Both phases built in one session. Sandbox tmp ran full near end — files pasted manually. |
 | 2 | 2026-03-14 | ARIA rebrand + naming session | Product named ARIA — Advisor Relationship Intelligence Assistant. Tagline set. Pitch rephrased. UI headers, browser title, GitHub repo renamed, git remote updated. Cross-project time tracking system created. | ~15 min | GitHub repo renamed from ria-advisor-copilot → aria-advisor. Commit: 9fbb726. |
 | 3 | 2026-03-15 | Session wrap + phase status sync | Updated NOTES/PRD/SESSION_LOG for current state. Marked FEAT-501 and FEAT-502 complete in PRD and advanced next start target to FEAT-503. | ~20 min | Also observed backend startup runtime issue during `riastart` (`unexpected keyword argument 'proxies'`) to triage next session. |

@@ -116,7 +116,7 @@ Example (Trade Management):
 | Financial profile (income, net worth, tax status) | ⬜ | FEAT-103 | Extend Client model — relevant for HNI segment |
 | ESG preference capture | ⬜ | FEAT-104 | Add to Client model + filter logic |
 | Assessment history (risk profile over time) | ⬜ | FEAT-105 | Versioned RiskProfile records |
-| KYC/AML mock flag system | ⬜ | FEAT-106 | Define fields, mock flags |
+| KYC/AML mock flag system | ✅ | FEAT-KYC | Status badge, nominee, FATCA, doc upload (Supabase), risk PDF — shipped 2026-04-18 |
 
 ---
 

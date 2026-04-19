@@ -28,6 +28,22 @@
 - HELP.md — full feature guide and setup docs
 - PRD.md v1.1 — updated with WF benchmark, FEAT-308/309 added
 
+## What Shipped This Session (2026-04-19 — Session 38)
+
+### FEAT-KYC Phase 1 — Post-Deploy Testing + Bug Fixes ✅
+- **Testing:** 11/11 automated tests passed against prod API
+- **Bug fixed:** `GET /clients/{id}` was always returning stale KYC data — 4 `Client360()` constructors missing KYC fields. Fixed with `_kyc_fields(client)` helper
+- **Bug fixed:** `GET /kyc/risk-pdf` → 500: `pdf.rotate()` removed in fpdf2 — replaced with `with pdf.rotation():` context manager
+- **Bug fixed:** `GET /kyc/risk-pdf` → 500: em-dash `—` unsupported in Helvetica — replaced with `"N/A"` in all PDF text (including header title)
+- **Test report:** `docs/KYC_PHASE1_TEST_REPORT.md` written and committed
+- **DB cleanup:** Test data on client id=1 fully reset to `not_started` / null state
+- **Commits:** 743fff0, 7b3c6bb, 7489286, follow-up em-dash header fix
+
+### Still pending (Supabase bucket required)
+- Document upload (`POST /kyc/documents`) returns 503 until `aria-kyc-docs` bucket created + Render env vars set
+
+---
+
 ## What Shipped This Session (2026-04-04 — Session 34)
 
 ### FEAT-1009 Advisor Billing Module ✅

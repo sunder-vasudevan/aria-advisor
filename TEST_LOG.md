@@ -24,6 +24,42 @@
 
 ---
 
+### [TEST-KYC-001] — KYC Phase 1 Feature Suite (FEAT-KYC)
+**Date:** 2026-04-19
+**Phase:** 2 (USP Depth)
+**Tested by:** Automated (Python urllib) + Claude Code
+**Test type:** Automated
+**Environment:** Render + Vercel (prod)
+
+| Test Case | Expected | Result | Status |
+|-----------|----------|--------|--------|
+| T1: kyc_status in GET /clients | Field present | value=in_progress | ✅ Pass |
+| T2: KYC fields in GET /clients/{id} | All 4 fields present | missing=[] | ✅ Pass |
+| T3: PATCH kyc/status → 200 | 200 OK | status=200 | ✅ Pass |
+| T4: kyc_status persists | GET shows updated value | kyc_status=in_progress | ✅ Pass |
+| T5: PATCH kyc/nominee → 200 | 200 OK | status=200 | ✅ Pass |
+| T6: nominee_name persists | GET shows updated value | nominee=Test Nominee | ✅ Pass |
+| T7: PATCH kyc/fatca → 200 | 200 OK | status=200 | ✅ Pass |
+| T8: FATCA + timestamp persists | declared=True + timestamp set | Both confirmed | ✅ Pass |
+| T9: GET kyc/documents reachable | 200 or 503 | status=200 | ✅ Pass |
+| T10: GET kyc/risk-pdf → PDF | %PDF header, 200 | 1917 bytes, %PDF confirmed | ✅ Pass |
+| T11: Invalid kyc_status rejected | 400 | status=400 | ✅ Pass |
+
+**Result: 11/11 PASS**
+
+**Bugs found during testing:**
+1. T4/T6/T8 initially FAIL — GET /clients/{id} not returning KYC fields (missing from Client360 constructors). Fixed: `_kyc_fields()` helper added
+2. T10 initially FAIL — `pdf.rotate()` removed in fpdf2. Fixed: `with pdf.rotation():`
+3. T10 still FAIL after fix 2 — em-dash `—` in header title unsupported in Helvetica. Fixed: replaced with `-`
+
+**Known gaps:**
+- Document upload not tested (requires Supabase bucket + env vars)
+- Document delete not tested
+- KYC auto-advance (not_started→in_progress→submitted) not tested
+**Blocked on:** Supabase `aria-kyc-docs` bucket creation + Render env vars
+
+---
+
 ### [TEST-001] — Client Book + Urgency Ranking
 **Date:** 2026-03-16
 **Phase:** 1

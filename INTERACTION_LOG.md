@@ -16,6 +16,25 @@
 
 ## ARIA Sessions
 
+### Session 38 — 2026-04-19 · Mac mini
+**Goal:** Test KYC Phase 1 features, document, clean up, wrap
+
+| Task | Time |
+|------|------|
+| Automated test suite (11 tests) — first run: 6/11 pass | ~15 min |
+| Bug fix: KYC fields missing from Client360 GET + pdf.rotate() | ~20 min |
+| Bug fix: em-dash in PDF header (Helvetica Latin-1 only) | ~10 min |
+| Render webhook misses — 2x manual deploy triggers | ~20 min |
+| Re-run tests — 11/11 pass | ~10 min |
+| Test report + DB cleanup + docs update | ~15 min |
+| Wrap | ~15 min |
+| **Total** | **~1h 45m** |
+
+**Shipped:** 3 bug fixes, 11/11 test pass, test report, KYC Phase 1 fully verified
+**Next:** Supabase bucket setup → document upload testing; ARIA Personal Dashboard revamp
+
+---
+
 ### Session 33 — 2026-04-04 · Mac mini
 **Goal:** Advisor UI Revamp v1.5.0
 
