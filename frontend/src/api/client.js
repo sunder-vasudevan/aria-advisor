@@ -147,6 +147,12 @@ export const uploadKycDocument = (clientId, file, docType) => {
 export const deleteKycDocument = (clientId, docId) =>
   api.delete(`/clients/${clientId}/kyc/documents/${docId}`)
 
+export const verifyKycDocument = (clientId, docId) =>
+  api.patch(`/clients/${clientId}/kyc/documents/${docId}/verify`).then(r => r.data)
+
+export const rejectKycDocument = (clientId, docId, reason) =>
+  api.patch(`/clients/${clientId}/kyc/documents/${docId}/reject`, { reason }).then(r => r.data)
+
 export const updateKycStatus = (clientId, kyc_status) =>
   api.patch(`/clients/${clientId}/kyc/status`, { kyc_status }).then(r => r.data)
 

@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { CheckCircle, Upload, Trash2, Download, FileText, Loader2, ShieldCheck, ShieldAlert, ShieldX, Shield, Clock } from 'lucide-react'
+import { CheckCircle, Upload, Trash2, Download, FileText, Loader2, ShieldCheck, ShieldAlert, ShieldX, Shield, Clock, XCircle } from 'lucide-react'
 import {
   getKycDocuments, uploadKycDocument, deleteKycDocument,
   updateKycStatus, updateNominee, updateFatca, downloadRiskPdf,
+  verifyKycDocument, rejectKycDocument,
 } from '../api/client'
 
 const INPUT_CLS = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300'
@@ -54,6 +55,10 @@ export default function KycPanel({ clientId, client, onStatusChange }) {
   const [deletingId, setDeletingId] = useState(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [pdfLoading, setPdfLoading] = useState(false)
+  const [verifyingId, setVerifyingId] = useState(null)
+  const [rejectingId, setRejectingId] = useState(null)
+  const [rejectReasonId, setRejectReasonId] = useState(null)
+  const [rejectReason, setRejectReason] = useState('')
 
   const [kycStatus, setKycStatus] = useState(client?.kyc_status || 'not_started')
   const [statusSaving, setStatusSaving] = useState(false)
@@ -175,6 +180,27 @@ export default function KycPanel({ clientId, client, onStatusChange }) {
     } finally {
       setPdfLoading(false)
     }
+  }
+
+  const handleVerify = async (docId) => {
+    setVerifyingId(docId)
+    try {
+      const result = await verifyKycDocument(clientId, docId)
+      setDocs(prev => prev.map(d => d.id === docId ? { ...d, status: 'verified', rejection_reason: null } : d))
+      if (result.kyc_status) { setKycStatus(result.kyc_status); if (onStatusChange) onStatusChange() }
+    } catch { /* silently fail */ } finally { setVerifyingId(null) }
+  }
+
+  const handleReject = async (docId) => {
+    if (!rejectReason.trim()) return
+    setRejectingId(docId)
+    try {
+      const result = await rejectKycDocument(clientId, docId, rejectReason.trim())
+      setDocs(prev => prev.map(d => d.id === docId ? { ...d, status: 'rejected', rejection_reason: rejectReason.trim() } : d))
+      if (result.kyc_status) { setKycStatus(result.kyc_status); if (onStatusChange) onStatusChange() }
+      setRejectReasonId(null)
+      setRejectReason('')
+    } catch { /* silently fail */ } finally { setRejectingId(null) }
   }
 
   const docByType = (type) => docs.find(d => d.doc_type === type)
@@ -321,9 +347,19 @@ export default function KycPanel({ clientId, client, onStatusChange }) {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-800">{slot.label}</span>
                   {existing ? (
-                    <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                      <CheckCircle size={12} /> Uploaded
-                    </span>
+                    existing.status === 'verified' ? (
+                      <span className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">
+                        <CheckCircle size={11} /> Verified
+                      </span>
+                    ) : existing.status === 'rejected' ? (
+                      <span className="flex items-center gap-1 text-xs text-red-600 font-medium bg-red-50 px-2 py-0.5 rounded-full">
+                        <XCircle size={11} /> Rejected
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-full">
+                        <Clock size={11} /> Pending
+                      </span>
+                    )
                   ) : (
                     <span className="text-xs text-gray-400">Not uploaded</span>
                   )}
@@ -347,29 +383,51 @@ export default function KycPanel({ clientId, client, onStatusChange }) {
                     <p className="text-xs text-gray-400">
                       Uploaded {new Date(existing.uploaded_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
+                    {existing.status === 'rejected' && existing.rejection_reason && (
+                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-2 py-1.5">
+                        Reason: {existing.rejection_reason}
+                      </p>
+                    )}
                     <div className="flex gap-2">
                       {existing.signed_url && (
                         <a
                           href={existing.signed_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 flex items-center justify-center gap-1 py-2 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors min-h-[36px]"
+                          className="flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors min-h-[36px]"
                         >
                           <Download size={12} /> View
                         </a>
                       )}
+                      {existing.status !== 'verified' && (
+                        <button
+                          onClick={() => handleVerify(existing.id)}
+                          disabled={verifyingId === existing.id}
+                          className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors min-h-[36px]"
+                        >
+                          {verifyingId === existing.id ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle size={11} />} Verify
+                        </button>
+                      )}
+                      {existing.status !== 'rejected' && rejectReasonId !== existing.id && (
+                        <button
+                          onClick={() => { setRejectReasonId(existing.id); setRejectReason('') }}
+                          className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors min-h-[36px]"
+                        >
+                          <XCircle size={11} /> Reject
+                        </button>
+                      )}
                       {pendingConfirm ? (
-                        <div className="flex-1 flex gap-1">
+                        <div className="flex gap-1">
                           <button
                             onClick={() => handleDelete(existing.id)}
                             disabled={isDeleting}
-                            className="flex-1 py-2 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 min-h-[36px]"
+                            className="px-3 py-2 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 min-h-[36px]"
                           >
                             {isDeleting ? <Loader2 size={12} className="animate-spin mx-auto" /> : 'Confirm'}
                           </button>
                           <button
                             onClick={() => setConfirmDeleteId(null)}
-                            className="flex-1 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 min-h-[36px]"
+                            className="px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 min-h-[36px]"
                           >
                             Cancel
                           </button>
@@ -383,6 +441,32 @@ export default function KycPanel({ clientId, client, onStatusChange }) {
                         </button>
                       )}
                     </div>
+                    {rejectReasonId === existing.id && (
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          placeholder="Reason for rejection…"
+                          value={rejectReason}
+                          onChange={e => setRejectReason(e.target.value)}
+                          className="w-full px-3 py-2 text-xs border border-red-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-300"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleReject(existing.id)}
+                            disabled={rejectingId === existing.id || !rejectReason.trim()}
+                            className="flex-1 py-2 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 min-h-[36px]"
+                          >
+                            {rejectingId === existing.id ? <Loader2 size={12} className="animate-spin mx-auto" /> : 'Send Rejection'}
+                          </button>
+                          <button
+                            onClick={() => { setRejectReasonId(null); setRejectReason('') }}
+                            className="flex-1 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 min-h-[36px]"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     {/* Re-upload option */}
                     <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer hover:text-gray-700 transition-colors">
                       <input
