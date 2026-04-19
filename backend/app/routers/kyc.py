@@ -76,7 +76,7 @@ def _generate_risk_pdf(client: Client) -> bytes:
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Helvetica", "B", 18)
     pdf.set_xy(0, 8)
-    pdf.cell(210, 10, "ARIA — Risk Profile Report", align="C")
+    pdf.cell(210, 10, "ARIA - Risk Profile Report", align="C")
     pdf.set_font("Helvetica", "", 10)
     pdf.set_xy(0, 20)
     pdf.cell(210, 6, "Advisor Relationship Intelligence Assistant", align="C")
