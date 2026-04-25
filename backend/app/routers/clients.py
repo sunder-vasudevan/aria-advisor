@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Header, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 from ..database import get_db
 from ..models import Client, Portfolio, Holding, Goal, LifeEvent, AuditLog, ClientInteraction, Trade
@@ -638,3 +638,58 @@ def update_lifecycle(
     client.lifecycle_stage = stage
     db.commit()
     return {"id": client_id, "lifecycle_stage": stage}
+
+
+@router.get("/{client_id}/portfolio-history")
+def get_portfolio_history(
+    client_id: int,
+    db: Session = Depends(get_db),
+    advisor_id: int = Depends(_get_advisor_id),
+    x_advisor_role: Optional[str] = Header(default=None),
+):
+    """
+    Returns portfolio value over time, derived from settled trades.
+    Each data point is a date + cumulative portfolio_value change from settled trades.
+    Falls back to a single data point (today's portfolio total_value) if no trade history.
+    """
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    _check_client_access(client, advisor_id, x_advisor_role)
+
+    settled_trades = (
+        db.query(Trade)
+        .filter(
+            Trade.client_id == client_id,
+            Trade.status == "settled",
+            Trade.settled_at.isnot(None),
+        )
+        .order_by(Trade.settled_at)
+        .all()
+    )
+
+    portfolio = db.query(Portfolio).filter(Portfolio.client_id == client_id).first()
+    current_total = portfolio.total_value if portfolio else 0.0
+
+    if not settled_trades:
+        return [{"date": date.today().isoformat(), "value": current_total}]
+
+    # Build running total from settled trade values
+    running = current_total
+    points = []
+    # Work backwards: current value minus trades in reverse gives historical values
+    for t in reversed(settled_trades):
+        delta = (t.actual_value or t.estimated_value) * (1 if t.action == "buy" else -1)
+        running -= delta
+        points.append({
+            "date": t.settled_at.date().isoformat(),
+            "value": round(max(running, 0), 2),
+        })
+    points.reverse()
+    points.append({"date": date.today().isoformat(), "value": round(current_total, 2)})
+
+    # Deduplicate same-day points — keep last value per day
+    seen = {}
+    for p in points:
+        seen[p["date"]] = p["value"]
+    return [{"date": d, "value": v} for d, v in sorted(seen.items())]

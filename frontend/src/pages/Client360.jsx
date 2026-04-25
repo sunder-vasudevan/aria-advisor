@@ -7,6 +7,7 @@ import { createLifeEvent, updateLifeEvent, deleteLifeEvent } from '../api/client
 import { ArrowLeft, AlertTriangle, Clock, CheckCircle, CalendarCheck, Sparkles, Pencil, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Plus, X, Loader2, Trash2, Archive, Bell, BellRing } from 'lucide-react'
 import PortfolioChart from '../components/PortfolioChart'
 import HoldingsTable from '../components/HoldingsTable'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import GoalsPanel from '../components/GoalsPanel'
 import CopilotChat from '../components/CopilotChat'
 import SituationSummary from '../components/SituationSummary'
@@ -616,6 +617,9 @@ export default function Client360() {
   const [archiveConfirm, setArchiveConfirm] = useState(false)
   const [archiving, setArchiving] = useState(false)
 
+  // Portfolio growth chart state
+  const [portfolioHistory, setPortfolioHistory] = useState(null)
+
   // Holdings edit state
   const [holdingsOpen, setHoldingsOpen] = useState(false)
   const [editingHoldings, setEditingHoldings] = useState(false)
@@ -668,10 +672,17 @@ export default function Client360() {
       setLifecycleStage(cached.lifecycle_stage || 'lead')
       setLoading(false)
     }
-    getClient(id)
-      .then(data => {
+    const BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
+    Promise.all([
+      getClient(id),
+      fetch(`${BASE}/clients/${id}/portfolio-history`, {
+        headers: { 'X-Advisor-Id': String(JSON.parse(localStorage.getItem('aria_advisor') || '{}').id || '') },
+      }).then(r => r.ok ? r.json() : []).catch(() => []),
+    ])
+      .then(([data, history]) => {
         setClient(data)
         setLifecycleStage(data.lifecycle_stage || 'lead')
+        setPortfolioHistory(history)
         window.__ariaClientCache = window.__ariaClientCache || {}
         window.__ariaClientCache[id] = data
       })
@@ -1220,6 +1231,30 @@ export default function Client360() {
               <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-card">
                 <PortfolioChart portfolio={client.portfolio} clientName={client.name} />
               </div>
+              {portfolioHistory && portfolioHistory.length > 1 && (
+                <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-card">
+                  <div className="text-sm font-bold text-gray-800 mb-4">Portfolio Growth</div>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <LineChart data={portfolioHistory} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
+                      <YAxis
+                        tickFormatter={v => v >= 1e7 ? `₹${(v/1e7).toFixed(1)}Cr` : v >= 1e5 ? `₹${(v/1e5).toFixed(0)}L` : `₹${v}`}
+                        tick={{ fontSize: 10, fill: '#9ca3af' }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={52}
+                      />
+                      <Tooltip
+                        formatter={(v) => [`₹${v.toLocaleString('en-IN')}`, 'Portfolio Value']}
+                        labelStyle={{ fontSize: 11 }}
+                        contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 11 }}
+                      />
+                      <Line type="monotone" dataKey="value" stroke="#1e4fff" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-card">
                 <button
                   onClick={() => setHoldingsOpen(o => !o)}

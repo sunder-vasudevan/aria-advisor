@@ -1,8 +1,8 @@
 import ARiALogo from '../components/ARiALogo'
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, TrendingUp, ChevronRight, ChevronDown, RefreshCw, Bell, BellRing, X, CheckCircle, UserPlus, LayoutList, Layers, HelpCircle, LogOut, Wifi, Zap, UserMinus, Receipt } from 'lucide-react'
-import { getClients, getBriefing, getClient, getAdvisorNotifications, markNotificationRead, delinkClient, fmt } from '../api/client'
+import { AlertTriangle, TrendingUp, ChevronRight, ChevronDown, RefreshCw, Bell, BellRing, X, CheckCircle, UserPlus, LayoutList, Layers, HelpCircle, LogOut, Wifi, Zap, UserMinus, Receipt, Mail, ShieldCheck } from 'lucide-react'
+import { getClients, getBriefing, getClient, getAdvisorNotifications, markNotificationRead, delinkClient, fmt, sendInvite } from '../api/client'
 import { getAdvisorSession, advisorLogout } from '../auth'
 import { KycStatusBadge } from '../components/KycPanel'
 
@@ -245,6 +245,11 @@ export default function ClientList() {
   const [showBriefing, setShowBriefing] = useState(false)
   const [segmentFilter, setSegmentFilter] = useState('All')
   const [delinkConfirm, setDelinkConfirm] = useState(null)
+  const [inviteModal, setInviteModal] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteName, setInviteName] = useState('')
+  const [inviteSending, setInviteSending] = useState(false)
+  const [inviteResult, setInviteResult] = useState(null) // { success, message }
   const prefetchCache = useRef({})
   const session = getAdvisorSession()
 
@@ -361,6 +366,14 @@ export default function ClientList() {
           >
             <HelpCircle size={14} /> Help
           </button>
+          {session?.role === 'superadmin' && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-amber-600 hover:bg-amber-50 text-sm font-medium transition-colors"
+            >
+              <ShieldCheck size={14} /> Admin
+            </button>
+          )}
         </nav>
 
         {/* Right controls */}
@@ -374,6 +387,12 @@ export default function ClientList() {
             <span className="hidden lg:inline">{briefingLoading ? 'Loading…' : 'Briefing'}</span>
           </button>
           <NotificationBell />
+          <button
+            onClick={() => { setInviteModal(true); setInviteResult(null); setInviteEmail(''); setInviteName('') }}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 shadow-sm transition-colors"
+          >
+            <Mail size={14} /> Invite
+          </button>
           <button
             onClick={() => navigate('/clients/new')}
             className="flex items-center gap-1.5 px-4 py-2 bg-[#1D6FDB] text-white text-sm font-semibold rounded-lg hover:bg-blue-700 shadow-sm transition-colors"
@@ -907,6 +926,84 @@ function BriefingCard({ briefing, clients, navigate, collapsed, setCollapsed }) 
               </div>
             )
           })()}
+        </>
+      )}
+
+      {/* ── Invite Client Modal ── */}
+      {inviteModal && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setInviteModal(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-base font-bold text-gray-900">Invite Client to ARIA</div>
+                <button onClick={() => setInviteModal(false)} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg">
+                  <X size={16} />
+                </button>
+              </div>
+              {inviteResult ? (
+                <div className={`rounded-xl p-4 text-sm font-medium ${inviteResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                  {inviteResult.message}
+                  {inviteResult.success && (
+                    <button
+                      onClick={() => { setInviteModal(false); setInviteResult(null) }}
+                      className="mt-3 w-full px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors"
+                    >
+                      Done
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault()
+                    setInviteSending(true)
+                    try {
+                      await sendInvite(inviteEmail, inviteName)
+                      setInviteResult({ success: true, message: `Invite sent to ${inviteEmail}. They'll receive a registration link valid for 7 days.` })
+                    } catch (err) {
+                      const msg = err?.response?.data?.detail || 'Failed to send invite. Check SMTP settings.'
+                      setInviteResult({ success: false, message: msg })
+                    } finally {
+                      setInviteSending(false)
+                    }
+                  }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Client Email *</label>
+                    <input
+                      type="email"
+                      required
+                      value={inviteEmail}
+                      onChange={e => setInviteEmail(e.target.value)}
+                      placeholder="client@example.com"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Client Name (optional)</label>
+                    <input
+                      type="text"
+                      value={inviteName}
+                      onChange={e => setInviteName(e.target.value)}
+                      placeholder="e.g. Priya Sharma"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400">The client will receive an email with a registration link valid for 7 days.</p>
+                  <button
+                    type="submit"
+                    disabled={inviteSending}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#1D6FDB] text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                  >
+                    <Mail size={14} />
+                    {inviteSending ? 'Sending…' : 'Send Invite'}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
         </>
       )}
     </div>

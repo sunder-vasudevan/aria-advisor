@@ -16,3 +16,4 @@ jugaad-data>=0.33.1
 pandas>=2.0.0
 fpdf2>=2.7.9
 supabase>=2.0.0
+aiosmtplib>=3.0.0

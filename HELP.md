@@ -1,5 +1,5 @@
 # ARIA Advisor Workbench — Help Guide
-**Version 2.2** · Last updated: 2026-04-19
+**Version 2.3** · Last updated: 2026-04-25
 
 ---
 
@@ -188,6 +188,47 @@ The **KYC & Docs** tab (2nd tab on Client 360°) lets you manage the full KYC li
 
 ---
 
+### 13. NSE EOD Prices (FEAT-2006)
+
+ARIA fetches end-of-day prices from NSE-listed instruments using **jugaad-data** — a free, official NSE data feed — replacing the previous yfinance dependency.
+
+**How it works:**
+- Prices refresh automatically on backend startup and can be triggered via the price sync job
+- Mutual fund NAVs: fetched from AMFI India NAVAll.txt (official, daily)
+- NSE stocks: fetched via jugaad-data NSE EOD feed (T+1 settlement, no API key required)
+- Crypto (BTC/ETH): fetched from CoinGecko in INR, refreshed every 5 minutes
+- Portfolio `total_value` is recalculated after each price refresh
+
+**What advisors see:**
+- Current NAV/price per holding in the Holdings table
+- Unrealised P&L updates reflect the latest EOD price (see FEAT-2007 below)
+
+> **Note:** NSE EOD prices are delayed by one trading day. Intraday live prices are on the roadmap.
+
+---
+
+### 14. Unrealised P&L + WACC (FEAT-2007)
+
+Each holding now tracks **average purchase price** using the **Weighted Average Cost of Capital (WACC)** method, and shows **unrealised P&L** against the current market price.
+
+**Avg Purchase Price (WACC):**
+- Calculated as: `(existing_units × existing_avg_price + new_units × execution_price) / total_units`
+- Recorded on every settled buy trade; updated incrementally on partial buys
+- Each trade records `execution_price` at the time of settlement
+
+**Unrealised P&L:**
+- Formula: `(current_price - avg_purchase_price) × units_held`
+- Displayed in the Holdings table as **▲ green** (gain) or **▼ red** (loss)
+- Also expressed as a **% gain/loss** next to the absolute INR value
+
+**Where it appears:**
+- **Client 360° Holdings tab** — per-holding P&L column
+- **ARIA Personal Dashboard** — same column in the personal holdings view
+
+> **Note:** Unrealised P&L is calculated server-side on every holdings fetch — no caching. Realised P&L (on sell settlement) is on the roadmap.
+
+---
+
 ### 10. Client Portal
 Clients can log in at `/client-portal/login` to view a read-only summary of their own portfolio and goals. No sensitive advisor data is exposed.
 
@@ -245,6 +286,21 @@ To re-seed: `cd backend && python seed.py`
 ---
 
 ## Changelog
+
+### v2.3 (2026-04-25)
+- **Parking lot clearance:** Holdings graphs, portfolio growth chart, email invites, bundle optimisation, superadmin view (in progress this session)
+
+### v2.2 (2026-04-08)
+- **NSE EOD Prices (FEAT-2006):** jugaad-data integration replaces yfinance for NSE stock prices
+  - Free, official NSE feed — no API key required
+  - Mutual fund NAVs: AMFI India NAVAll.txt (daily)
+  - Crypto: CoinGecko INR feed (5-minute refresh)
+  - Portfolio `total_value` recalculated after each sync
+- **Unrealised P&L + WACC (FEAT-2007):** Per-holding cost basis and gain/loss tracking
+  - `avg_purchase_price` calculated via WACC on each settled buy trade
+  - `execution_price` recorded on every trade at settlement time
+  - Unrealised P&L shown in Holdings table as ▲/▼ (INR + %)
+  - Live on both Advisor Client 360° and ARIA Personal Dashboard
 
 ### v2.1 (2026-04-08)
 - **Client Lifecycle Stage (FEAT-2004):** First-class lifecycle field on every client

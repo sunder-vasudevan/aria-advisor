@@ -7,7 +7,9 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
+from datetime import datetime
 from ..database import get_db
+from ..models import Invitation
 from ..personal_models import PersonalUser
 from ..auth import get_password_hash, verify_password, create_access_token, get_current_personal_user
 from .notifications import create_notification
@@ -22,6 +24,7 @@ class RegisterRequest(BaseModel):
     password: str
     display_name: str
     referral_code: Optional[str] = None
+    invite_token: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
@@ -214,6 +217,18 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=409, detail="Email already registered")
 
+    # Validate invite token if provided
+    invitation = None
+    if payload.invite_token:
+        invitation = db.query(Invitation).filter(
+            Invitation.token == payload.invite_token,
+            Invitation.used.is_(False),
+        ).first()
+        if not invitation:
+            raise HTTPException(status_code=400, detail="Invalid or expired invite token")
+        if invitation.expires_at < datetime.utcnow():
+            raise HTTPException(status_code=400, detail="Invite link has expired")
+
     user = PersonalUser(
         email=payload.email.lower(),
         hashed_password=get_password_hash(payload.password),
@@ -223,9 +238,16 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    # Resolve advisor if referral code provided
+    if invitation:
+        invitation.used = True
+        db.commit()
+
+    # Resolve advisor: invite token takes priority over referral code
     advisor_id = None
-    if payload.referral_code:
+    if invitation and invitation.advisor_id:
+        advisor_id = invitation.advisor_id
+        _set_advisor_id(user.id, advisor_id, db)
+    elif payload.referral_code:
         advisor_id = _resolve_advisor_id(payload.referral_code, db)
         if advisor_id:
             _set_advisor_id(user.id, advisor_id, db)

@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { fmt } from '../api/client'
 import { X } from 'lucide-react'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList,
+} from 'recharts'
 
 const CATEGORY_COLORS = {
   'Large Cap':     'bg-blue-50 text-blue-700 border-blue-100',
@@ -105,6 +108,30 @@ function HoldingDrawer({ holding, totalValue, onClose }) {
               </div>
             </div>
 
+            {/* Allocation vs Target bar chart */}
+            <div className="border border-gray-100 rounded-xl p-4">
+              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Allocation vs Target</div>
+              <ResponsiveContainer width="100%" height={72}>
+                <BarChart
+                  data={[
+                    { label: 'Current', value: holding.current_pct },
+                    { label: 'Target', value: holding.target_pct },
+                  ]}
+                  layout="vertical"
+                  margin={{ left: 8, right: 32, top: 0, bottom: 0 }}
+                >
+                  <XAxis type="number" domain={[0, Math.max(holding.current_pct, holding.target_pct) * 1.3 || 10]} hide />
+                  <YAxis type="category" dataKey="label" width={52} tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(v) => [`${v.toFixed(1)}%`]} />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
+                    <Cell fill={isDrifted ? (drift > 0 ? '#f87171' : '#4ade80') : '#1e4fff'} />
+                    <Cell fill="#d1d5db" />
+                    <LabelList dataKey="value" position="right" formatter={(v) => `${v.toFixed(1)}%`} style={{ fontSize: 11, fill: '#374151', fontWeight: 600 }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
             {/* NAV detail */}
             {holding.nav_per_unit != null && holding.units_held != null && (
               <div className="border border-gray-100 rounded-xl p-4">
@@ -150,6 +177,46 @@ function HoldingDrawer({ holding, totalValue, onClose }) {
         </div>
       </div>
     </>
+  )
+}
+
+const CATEGORY_CHART_COLORS = {
+  'Large Cap':     '#1e4fff',
+  'Flexi Cap':     '#7c3aed',
+  'Small Cap':     '#f43f5e',
+  'Mid Cap':       '#f97316',
+  'Corporate Bond':'#0d9488',
+  'Liquid':        '#9ca3af',
+  'ELSS':          '#10b981',
+}
+
+function CategoryBreakdownChart({ holdings, totalValue }) {
+  const byCategory = {}
+  holdings.forEach(h => {
+    const cat = h.fund_category || 'Other'
+    byCategory[cat] = (byCategory[cat] || 0) + h.current_value
+  })
+  const data = Object.entries(byCategory)
+    .map(([cat, val]) => ({ cat, pct: totalValue > 0 ? (val / totalValue) * 100 : 0 }))
+    .sort((a, b) => b.pct - a.pct)
+
+  return (
+    <div className="mt-4 border border-gray-100 rounded-xl p-4">
+      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Category Breakdown</div>
+      <ResponsiveContainer width="100%" height={data.length * 28 + 8}>
+        <BarChart data={data} layout="vertical" margin={{ left: 8, right: 40, top: 0, bottom: 0 }}>
+          <XAxis type="number" domain={[0, 100]} hide />
+          <YAxis type="category" dataKey="cat" width={96} tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+          <Tooltip formatter={(v) => [`${v.toFixed(1)}%`]} />
+          <Bar dataKey="pct" radius={[0, 4, 4, 0]} barSize={16}>
+            {data.map((entry) => (
+              <Cell key={entry.cat} fill={CATEGORY_CHART_COLORS[entry.cat] || '#9ca3af'} />
+            ))}
+            <LabelList dataKey="pct" position="right" formatter={(v) => `${v.toFixed(1)}%`} style={{ fontSize: 11, fill: '#374151', fontWeight: 600 }} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
 
@@ -222,6 +289,8 @@ export default function HoldingsTable({ holdings }) {
           )
         })}
       </div>
+
+      <CategoryBreakdownChart holdings={holdings} totalValue={totalValue} />
 
       {selectedHolding && (
         <HoldingDrawer

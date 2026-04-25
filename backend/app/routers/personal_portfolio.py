@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy.orm import Session
+from datetime import date
 
 from ..database import get_db
-from ..models import Portfolio, Holding
+from ..models import Portfolio, Holding, Trade
 from ..personal_models import PersonalUser
 from ..auth import get_current_personal_user
 
@@ -125,3 +126,51 @@ def save_portfolio(
     db.commit()
     db.refresh(p)
     return _portfolio_out(p)
+
+
+@router.get("/history")
+def get_personal_portfolio_history(
+    current_user: PersonalUser = Depends(get_current_personal_user),
+    db: Session = Depends(get_db),
+):
+    """Portfolio value over time derived from personal user's settled trades."""
+    from sqlalchemy import text as sa_text
+    p = db.query(Portfolio).filter(Portfolio.personal_user_id == current_user.id).first()
+    current_total = p.total_value if p else 0.0
+
+    # Resolve client_id linked to this personal user
+    row = db.execute(
+        sa_text("SELECT client_id FROM portfolios WHERE personal_user_id = :uid LIMIT 1"),
+        {"uid": current_user.id},
+    ).fetchone()
+    client_id = row[0] if row else None
+
+    settled_trades = []
+    if client_id:
+        settled_trades = (
+            db.query(Trade)
+            .filter(
+                Trade.client_id == client_id,
+                Trade.status == "settled",
+                Trade.settled_at.isnot(None),
+            )
+            .order_by(Trade.settled_at)
+            .all()
+        )
+
+    if not settled_trades:
+        return [{"date": date.today().isoformat(), "value": current_total}]
+
+    running = current_total
+    points = []
+    for t in reversed(settled_trades):
+        delta = (t.actual_value or t.estimated_value) * (1 if t.action == "buy" else -1)
+        running -= delta
+        points.append({"date": t.settled_at.date().isoformat(), "value": round(max(running, 0), 2)})
+    points.reverse()
+    points.append({"date": date.today().isoformat(), "value": round(current_total, 2)})
+
+    seen = {}
+    for point in points:
+        seen[point["date"]] = point["value"]
+    return [{"date": d, "value": v} for d, v in sorted(seen.items())]

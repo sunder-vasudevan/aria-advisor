@@ -174,6 +174,9 @@ export const downloadRiskPdf = async (clientId) => {
   window.URL.revokeObjectURL(url)
 }
 
+export const sendInvite = (clientEmail, clientName) =>
+  api.post('/invites', { client_email: clientEmail, client_name: clientName }).then(r => r.data)
+
 export const fmt = {
   inr: (v) => {
     if (!v && v !== 0) return '—'

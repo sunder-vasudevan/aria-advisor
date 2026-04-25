@@ -456,3 +456,18 @@ class ClientDocument(Base):
 
     client = relationship("Client", back_populates="documents")
     advisor = relationship("Advisor", foreign_keys=[advisor_id])
+
+
+class Invitation(Base):
+    """Client email invitations sent by advisors."""
+    __tablename__ = "invitations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    advisor_id = Column(Integer, ForeignKey("advisors.id"), nullable=False, index=True)
+    client_email = Column(String, nullable=False, index=True)
+    token = Column(String, unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    advisor = relationship("Advisor")
