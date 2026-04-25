@@ -6,6 +6,8 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 import anthropic
 
+from ..security_utils import sanitize_ai_response
+
 from ..database import get_db
 from ..models import Portfolio
 from ..personal_models import PersonalUser, PersonalCopilotLog
@@ -121,7 +123,7 @@ def personal_copilot(
         messages=messages,
     )
 
-    ai_text = response.content[0].text
+    ai_text = sanitize_ai_response(response.content[0].text)
 
     log = PersonalCopilotLog(
         user_id=current_user.id,

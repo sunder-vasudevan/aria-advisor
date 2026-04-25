@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 import anthropic
 
+from ..security_utils import sanitize_ai_response
+
 from ..database import get_db
 from ..models import Client, AuditLog
 from ..schemas import CopilotRequest, CopilotResponse
@@ -137,7 +139,7 @@ def copilot_chat(
         messages=messages,
     )
 
-    ai_text = response.content[0].text
+    ai_text = sanitize_ai_response(response.content[0].text)
 
     # Audit log
     log = AuditLog(

@@ -11,8 +11,8 @@ from ..database import get_db
 from ..models import Client, ClientDocument, Notification
 from ..personal_models import PersonalUser
 from ..schemas import ClientDocumentOut, KycStatusUpdate, NomineeUpdate, FatcaUpdate, DocRejectRequest
-from ..auth import get_current_personal_user
-from .clients import _get_advisor_id, _check_client_access
+from ..auth import get_current_personal_user, get_current_advisor_user
+from .clients import _check_client_access
 from .notifications import create_notification
 
 router = APIRouter(tags=["kyc"])
@@ -148,15 +148,15 @@ def update_kyc_status(
     client_id: int,
     payload: KycStatusUpdate,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = None,
+    current_advisor=Depends(get_current_advisor_user),
+    
 ):
     if payload.kyc_status not in VALID_KYC_STATUSES:
         raise HTTPException(status_code=400, detail=f"Invalid kyc_status. Must be one of: {VALID_KYC_STATUSES}")
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     client.kyc_status = payload.kyc_status
     db.commit()
     return {"id": client_id, "kyc_status": client.kyc_status}
@@ -167,13 +167,13 @@ def update_nominee(
     client_id: int,
     payload: NomineeUpdate,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = None,
+    current_advisor=Depends(get_current_advisor_user),
+    
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     if payload.nominee_name is not None:
         client.nominee_name = payload.nominee_name
     if payload.nominee_relation is not None:
@@ -197,13 +197,13 @@ def update_fatca(
     client_id: int,
     payload: FatcaUpdate,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = None,
+    current_advisor=Depends(get_current_advisor_user),
+    
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     client.fatca_declaration = payload.declared
     client.fatca_declared_at = datetime.utcnow() if payload.declared else None
     db.commit()
@@ -220,15 +220,15 @@ async def upload_document(
     file: UploadFile = File(...),
     doc_type: str = Form(...),
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = None,
+    current_advisor=Depends(get_current_advisor_user),
+    
 ):
     if doc_type not in VALID_DOC_TYPES:
         raise HTTPException(status_code=400, detail=f"Invalid doc_type. Must be one of: {VALID_DOC_TYPES}")
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
 
     file_bytes = await file.read()
     storage_path = _upload_to_storage(client_id, doc_type, file_bytes, file.filename or "upload")
@@ -247,7 +247,7 @@ async def upload_document(
 
     doc = ClientDocument(
         client_id=client_id,
-        advisor_id=advisor_id,
+        advisor_id=current_advisor.id,
         doc_type=doc_type,
         file_url=storage_path,
         file_name=file.filename or "upload",
@@ -277,13 +277,13 @@ async def upload_document(
 def list_documents(
     client_id: int,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = None,
+    current_advisor=Depends(get_current_advisor_user),
+    
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
 
     docs = db.query(ClientDocument).filter(ClientDocument.client_id == client_id).all()
     result = []
@@ -309,13 +309,13 @@ def delete_document(
     client_id: int,
     doc_id: int,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = None,
+    current_advisor=Depends(get_current_advisor_user),
+    
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
 
     doc = db.query(ClientDocument).filter(
         ClientDocument.id == doc_id,
@@ -338,13 +338,13 @@ def verify_document(
     client_id: int,
     doc_id: int,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = None,
+    current_advisor=Depends(get_current_advisor_user),
+    
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
 
     doc = db.query(ClientDocument).filter(
         ClientDocument.id == doc_id,
@@ -371,13 +371,13 @@ def reject_document(
     doc_id: int,
     payload: DocRejectRequest,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = None,
+    current_advisor=Depends(get_current_advisor_user),
+    
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
 
     doc = db.query(ClientDocument).filter(
         ClientDocument.id == doc_id,
@@ -469,7 +469,7 @@ async def personal_upload_document(
 
     doc = ClientDocument(
         client_id=client.id,
-        advisor_id=advisor_id,
+        advisor_id=current_advisor.id,
         doc_type=doc_type,
         file_url=storage_path,
         file_name=file.filename or "upload",
@@ -484,7 +484,7 @@ async def personal_upload_document(
     doc_label = doc_type.replace("_", " ").title()
     create_notification(
         db=db,
-        advisor_id=advisor_id,
+        advisor_id=current_advisor.id,
         notification_type="kyc_doc_uploaded",
         message=f"{client.name} uploaded {doc_label} for KYC review",
     )
@@ -513,13 +513,13 @@ async def personal_upload_document(
 def download_risk_pdf(
     client_id: int,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = None,
+    current_advisor=Depends(get_current_advisor_user),
+    
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
 
     try:
         pdf_bytes = _generate_risk_pdf(client)

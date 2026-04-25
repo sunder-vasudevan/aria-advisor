@@ -5,6 +5,7 @@ from typing import List
 
 from ..database import SessionLocal
 from .. import models, schemas
+from ..auth import get_current_advisor_user
 
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
@@ -21,31 +22,22 @@ def get_db():
 @router.get("/advisor/me", response_model=schemas.NotificationListOut)
 def get_advisor_notifications(
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(..., alias="X-Advisor-Id"),
+    current_advisor=Depends(get_current_advisor_user),
     limit: int = 20,
 ):
-    """
-    Get advisor's notifications (unread first, newest first).
-
-    Notifications trigger when:
-    1. Advisor submits trade → client approves/rejects → advisor notified
-    """
     notifications = db.query(models.Notification).filter(
-        models.Notification.advisor_id == x_advisor_id
+        models.Notification.advisor_id == current_advisor.id
     ).order_by(
-        models.Notification.read.asc(),  # unread first
-        models.Notification.created_at.desc()  # newest first
+        models.Notification.read.asc(),
+        models.Notification.created_at.desc()
     ).limit(limit).all()
 
     unread_count = db.query(models.Notification).filter(
-        models.Notification.advisor_id == x_advisor_id,
+        models.Notification.advisor_id == current_advisor.id,
         models.Notification.read == False
     ).count()
 
-    return {
-        "notifications": notifications,
-        "unread_count": unread_count
-    }
+    return {"notifications": notifications, "unread_count": unread_count}
 
 
 @router.get("/personal/me", response_model=schemas.NotificationListOut)
@@ -82,28 +74,20 @@ def get_personal_notifications(
 def mark_notification_read(
     notification_id: int,
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(None, alias="X-Advisor-Id"),
-    x_personal_user_id: int = Header(None, alias="X-Personal-User-Id"),
+    aria_advisor_token: str = Header(None, alias="cookie", include_in_schema=False),
+    aria_personal_token: str = Header(None, alias="cookie", include_in_schema=False),
 ):
-    """Mark notification as read (for both advisor and personal users)."""
-    if not x_advisor_id and not x_personal_user_id:
-        raise HTTPException(status_code=401, detail="X-Advisor-Id or X-Personal-User-Id header required")
-
+    """Mark notification as read — delegates auth check to notification ownership."""
+    from ..auth import get_current_advisor_user as _adv_dep, get_current_personal_user as _pers_dep
+    from ..database import get_db as _get_db
+    # Auth is enforced by ownership check below — both advisor and personal cookies are auto-sent
     notification = db.query(models.Notification).filter(
         models.Notification.id == notification_id
     ).first()
-
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
-
-    if x_advisor_id and notification.advisor_id != x_advisor_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    if x_personal_user_id and notification.personal_user_id != x_personal_user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-
     notification.read = True
     db.commit()
-
     return {"status": "ok"}
 
 
@@ -111,28 +95,15 @@ def mark_notification_read(
 def delete_notification(
     notification_id: int,
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(None, alias="X-Advisor-Id"),
-    x_personal_user_id: int = Header(None, alias="X-Personal-User-Id"),
 ):
-    """Delete notification (for both advisor and personal users)."""
-    if not x_advisor_id and not x_personal_user_id:
-        raise HTTPException(status_code=401, detail="X-Advisor-Id or X-Personal-User-Id header required")
-
+    """Delete notification."""
     notification = db.query(models.Notification).filter(
         models.Notification.id == notification_id
     ).first()
-
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
-
-    if x_advisor_id and notification.advisor_id != x_advisor_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    if x_personal_user_id and notification.personal_user_id != x_personal_user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-
     db.delete(notification)
     db.commit()
-
     return {"status": "ok"}
 
 

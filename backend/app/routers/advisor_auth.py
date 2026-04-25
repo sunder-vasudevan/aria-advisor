@@ -1,16 +1,16 @@
 """
 Advisor authentication router.
-V1: validates against the seeded advisors table (bcrypt password check).
-Returns advisor profile including location, role, referral_code.
+V2: issues JWT on login + sets httpOnly cookie. Reads advisor identity from cookie.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+import os
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 
 from ..database import get_db
 from ..models import Advisor
-from ..auth import verify_password
+from ..auth import verify_password, create_access_token, get_current_advisor_user
 
 router = APIRouter(prefix="/advisor", tags=["advisor-auth"])
 
@@ -35,8 +35,14 @@ class AdvisorProfile(BaseModel):
         from_attributes = True
 
 
-@router.post("/login", response_model=AdvisorProfile)
-def advisor_login(payload: AdvisorLoginRequest, db: Session = Depends(get_db)):
+class AdvisorLoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    advisor: AdvisorProfile
+
+
+@router.post("/login", response_model=AdvisorLoginResponse)
+def advisor_login(payload: AdvisorLoginRequest, response: Response, db: Session = Depends(get_db)):
     advisor = db.query(Advisor).filter(
         Advisor.username == payload.username,
         Advisor.is_active.is_(True),
@@ -46,7 +52,22 @@ def advisor_login(payload: AdvisorLoginRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         )
-    return advisor
+    token = create_access_token({"sub": "advisor", "advisor_id": advisor.id, "role": advisor.role})
+    cookie_secure = os.getenv("COOKIE_SECURE", "true") == "true"
+    response.set_cookie(
+        "aria_advisor_token", token,
+        httponly=True,
+        secure=cookie_secure,
+        samesite="none",
+        max_age=604800,
+    )
+    return AdvisorLoginResponse(access_token=token, token_type="bearer", advisor=AdvisorProfile.model_validate(advisor))
+
+
+@router.post("/logout")
+def advisor_logout(response: Response):
+    response.delete_cookie("aria_advisor_token", samesite="none", secure=True)
+    return {"ok": True}
 
 
 @router.get("/profile/{username}", response_model=AdvisorProfile)
@@ -73,20 +94,15 @@ class AdvisorUpdateRequest(BaseModel):
 def update_advisor_profile(
     payload: AdvisorUpdateRequest,
     db: Session = Depends(get_db),
-    x_advisor_id: Optional[int] = Header(default=None),
+    current_advisor: Advisor = Depends(get_current_advisor_user),
 ):
     """Advisor updates their own profile (display_name, city, region)."""
-    if not x_advisor_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    advisor = db.query(Advisor).filter(Advisor.id == x_advisor_id).first()
-    if not advisor:
-        raise HTTPException(status_code=404, detail="Advisor not found")
     if payload.display_name is not None:
-        advisor.display_name = payload.display_name.strip()
+        current_advisor.display_name = payload.display_name.strip()
     if payload.city is not None:
-        advisor.city = payload.city.strip() or None
+        current_advisor.city = payload.city.strip() or None
     if payload.region is not None:
-        advisor.region = payload.region.strip() or None
+        current_advisor.region = payload.region.strip() or None
     db.commit()
-    db.refresh(advisor)
-    return advisor
+    db.refresh(current_advisor)
+    return current_advisor

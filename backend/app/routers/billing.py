@@ -7,7 +7,7 @@ from datetime import datetime, date
 from ..database import SessionLocal
 from .. import models
 from ..personal_models import PersonalUser
-from ..auth import get_current_personal_user
+from ..auth import get_current_personal_user, get_current_advisor_user
 
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -57,10 +57,10 @@ def _period_start_end(billing_period: str) -> tuple[date, date]:
 @router.get("/fee-config")
 def get_fee_config(
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(..., alias="X-Advisor-Id"),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     config = db.query(models.AdvisorFeeConfig).filter(
-        models.AdvisorFeeConfig.advisor_id == x_advisor_id
+        models.AdvisorFeeConfig.advisor_id == current_advisor.id
     ).first()
     if not config:
         return {"success": True, "data": None}
@@ -76,10 +76,10 @@ def get_fee_config(
 def set_fee_config(
     payload: dict,
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(..., alias="X-Advisor-Id"),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     config = db.query(models.AdvisorFeeConfig).filter(
-        models.AdvisorFeeConfig.advisor_id == x_advisor_id
+        models.AdvisorFeeConfig.advisor_id == current_advisor.id
     ).first()
     if config:
         config.fee_type = payload["fee_type"]
@@ -87,7 +87,7 @@ def set_fee_config(
         config.billing_period = payload.get("billing_period", "monthly")
     else:
         config = models.AdvisorFeeConfig(
-            advisor_id=x_advisor_id,
+            advisor_id=current_advisor.id,
             fee_type=payload["fee_type"],
             rate=payload["rate"],
             billing_period=payload.get("billing_period", "monthly"),
@@ -107,11 +107,11 @@ def set_fee_config(
 def get_client_fee_config(
     client_id: int,
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(..., alias="X-Advisor-Id"),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(models.Client).filter(
         models.Client.id == client_id,
-        models.Client.advisor_id == x_advisor_id,
+        models.Client.advisor_id == current_advisor.id,
     ).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found or access denied")
@@ -135,11 +135,11 @@ def set_client_fee_config(
     client_id: int,
     payload: dict,
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(..., alias="X-Advisor-Id"),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(models.Client).filter(
         models.Client.id == client_id,
-        models.Client.advisor_id == x_advisor_id,
+        models.Client.advisor_id == current_advisor.id,
     ).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found or access denied")
@@ -193,11 +193,11 @@ def _invoice_to_dict(inv: models.Invoice) -> dict:
 def get_client_invoices(
     client_id: int,
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(..., alias="X-Advisor-Id"),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(models.Client).filter(
         models.Client.id == client_id,
-        models.Client.advisor_id == x_advisor_id,
+        models.Client.advisor_id == current_advisor.id,
     ).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found or access denied")
@@ -214,11 +214,11 @@ def create_invoice(
     client_id: int,
     payload: dict,
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(..., alias="X-Advisor-Id"),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(models.Client).filter(
         models.Client.id == client_id,
-        models.Client.advisor_id == x_advisor_id,
+        models.Client.advisor_id == current_advisor.id,
     ).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found or access denied")
@@ -228,7 +228,7 @@ def create_invoice(
         models.ClientFeeConfig.client_id == client_id
     ).first()
     advisor_config = db.query(models.AdvisorFeeConfig).filter(
-        models.AdvisorFeeConfig.advisor_id == x_advisor_id
+        models.AdvisorFeeConfig.advisor_id == current_advisor.id
     ).first()
 
     fee_type = payload.get("fee_type") or (override.fee_type.value if override else None) or (advisor_config.fee_type.value if advisor_config else "aum")
@@ -255,7 +255,7 @@ def create_invoice(
 
     invoice = models.Invoice(
         client_id=client_id,
-        advisor_id=x_advisor_id,
+        advisor_id=current_advisor.id,
         fee_type=fee_type,
         amount=amount,
         period_start=period_start,
@@ -274,11 +274,11 @@ def create_invoice(
 def collect_invoice(
     invoice_id: int,
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(..., alias="X-Advisor-Id"),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     invoice = db.query(models.Invoice).filter(
         models.Invoice.id == invoice_id,
-        models.Invoice.advisor_id == x_advisor_id,
+        models.Invoice.advisor_id == current_advisor.id,
     ).first()
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found or access denied")
@@ -317,9 +317,9 @@ def collect_invoice(
 def get_all_invoices(
     status: Optional[str] = None,
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(..., alias="X-Advisor-Id"),
+    current_advisor=Depends(get_current_advisor_user),
 ):
-    q = db.query(models.Invoice).filter(models.Invoice.advisor_id == x_advisor_id)
+    q = db.query(models.Invoice).filter(models.Invoice.advisor_id == current_advisor.id)
     if status:
         q = q.filter(models.Invoice.status == status)
     invoices = q.order_by(models.Invoice.created_at.desc()).all()

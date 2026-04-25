@@ -7,7 +7,7 @@ from datetime import datetime
 
 from ..database import SessionLocal
 from .. import models, schemas
-from ..auth import get_current_personal_user
+from ..auth import get_current_personal_user, get_current_advisor_user
 from .notifications import create_notification
 
 
@@ -48,18 +48,12 @@ def create_trade_draft(
     client_id: int,
     trade_data: schemas.TradeCreate,
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(..., alias="X-Advisor-Id"),
+    current_advisor=Depends(get_current_advisor_user),
 ):
-    """
-    Advisor creates a trade (saved as draft).
-
-    Request headers: X-Advisor-Id (from JWT token)
-    Status: draft
-    """
-    # Verify advisor owns this client
+    """Advisor creates a trade (saved as draft). Status: draft"""
     client = db.query(models.Client).filter(
         models.Client.id == client_id,
-        models.Client.advisor_id == x_advisor_id
+        models.Client.advisor_id == current_advisor.id
     ).first()
 
     if not client:
@@ -67,10 +61,9 @@ def create_trade_draft(
 
     _validate_min_quantity(trade_data.asset_type, trade_data.quantity)
 
-    # Create trade
     trade = models.Trade(
         client_id=client_id,
-        advisor_id=x_advisor_id,
+        advisor_id=current_advisor.id,
         asset_type=trade_data.asset_type,
         action=trade_data.action,
         asset_code=trade_data.asset_code,
@@ -101,16 +94,12 @@ def submit_trade_for_approval(
     trade_id: int,
     submit_data: schemas.TradeSubmit,
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(..., alias="X-Advisor-Id"),
+    current_advisor=Depends(get_current_advisor_user),
 ):
-    """
-    Advisor submits trade for approval (draft → pending_approval).
-
-    Status transition: draft → pending_approval
-    """
+    """Advisor submits trade for approval (draft → pending_approval)."""
     trade = db.query(models.Trade).filter(
         models.Trade.id == trade_id,
-        models.Trade.advisor_id == x_advisor_id,
+        models.Trade.advisor_id == current_advisor.id,
     ).first()
 
     if not trade:
@@ -375,17 +364,12 @@ def reject_trade(
 def list_advisor_trades(
     client_id: int,
     db: Session = Depends(get_db),
-    x_advisor_id: int = Header(..., alias="X-Advisor-Id"),
+    current_advisor=Depends(get_current_advisor_user),
 ):
-    """
-    Advisor views all trades for a client (ARIA Advisor perspective).
-
-    Returns: All trades (draft, pending_approval, approved, rejected, settled, cancelled)
-    """
-    # Verify advisor owns this client
+    """Advisor views all trades for a client."""
     client = db.query(models.Client).filter(
         models.Client.id == client_id,
-        models.Client.advisor_id == x_advisor_id
+        models.Client.advisor_id == current_advisor.id
     ).first()
 
     if not client:

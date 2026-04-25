@@ -6,24 +6,19 @@ from datetime import datetime
 from ..database import get_db
 from ..models import Prospect, ProspectStageEnum, Client
 from ..schemas import ProspectCreate, ProspectUpdate, ProspectStageUpdate, ProspectOut
+from ..auth import get_current_advisor_user
 
 router = APIRouter(prefix="/prospects", tags=["prospects"])
 
 
-def _get_advisor_id(x_advisor_id: Optional[str] = Header(None)) -> int:
-    if not x_advisor_id:
-        raise HTTPException(status_code=401, detail="X-Advisor-Id header required")
-    return int(x_advisor_id)
-
-
 @router.get("", response_model=List[ProspectOut])
 def list_prospects(
-    advisor_id: int = Depends(_get_advisor_id),
+    current_advisor=Depends(get_current_advisor_user),
     db: Session = Depends(get_db),
 ):
     return (
         db.query(Prospect)
-        .filter(Prospect.advisor_id == advisor_id)
+        .filter(Prospect.advisor_id == current_advisor.id)
         .order_by(Prospect.created_at.desc())
         .all()
     )
@@ -32,11 +27,11 @@ def list_prospects(
 @router.post("", response_model=ProspectOut, status_code=201)
 def create_prospect(
     payload: ProspectCreate,
-    advisor_id: int = Depends(_get_advisor_id),
+    current_advisor=Depends(get_current_advisor_user),
     db: Session = Depends(get_db),
 ):
     prospect = Prospect(
-        advisor_id=advisor_id,
+        advisor_id=current_advisor.id,
         name=payload.name,
         estimated_aum=payload.estimated_aum,
         source=payload.source,
@@ -51,12 +46,12 @@ def create_prospect(
 @router.get("/{prospect_id}", response_model=ProspectOut)
 def get_prospect(
     prospect_id: int,
-    advisor_id: int = Depends(_get_advisor_id),
+    current_advisor=Depends(get_current_advisor_user),
     db: Session = Depends(get_db),
 ):
     prospect = db.query(Prospect).filter(
         Prospect.id == prospect_id,
-        Prospect.advisor_id == advisor_id,
+        Prospect.advisor_id == current_advisor.id,
     ).first()
     if not prospect:
         raise HTTPException(status_code=404, detail="Prospect not found")
@@ -67,12 +62,12 @@ def get_prospect(
 def update_prospect(
     prospect_id: int,
     payload: ProspectUpdate,
-    advisor_id: int = Depends(_get_advisor_id),
+    current_advisor=Depends(get_current_advisor_user),
     db: Session = Depends(get_db),
 ):
     prospect = db.query(Prospect).filter(
         Prospect.id == prospect_id,
-        Prospect.advisor_id == advisor_id,
+        Prospect.advisor_id == current_advisor.id,
     ).first()
     if not prospect:
         raise HTTPException(status_code=404, detail="Prospect not found")
@@ -88,7 +83,7 @@ def update_prospect(
 def update_stage(
     prospect_id: int,
     payload: ProspectStageUpdate,
-    advisor_id: int = Depends(_get_advisor_id),
+    current_advisor=Depends(get_current_advisor_user),
     db: Session = Depends(get_db),
 ):
     try:
@@ -98,7 +93,7 @@ def update_stage(
 
     prospect = db.query(Prospect).filter(
         Prospect.id == prospect_id,
-        Prospect.advisor_id == advisor_id,
+        Prospect.advisor_id == current_advisor.id,
     ).first()
     if not prospect:
         raise HTTPException(status_code=404, detail="Prospect not found")
@@ -113,13 +108,13 @@ def update_stage(
 @router.patch("/{prospect_id}/convert", response_model=ProspectOut)
 def convert_to_client(
     prospect_id: int,
-    advisor_id: int = Depends(_get_advisor_id),
+    current_advisor=Depends(get_current_advisor_user),
     db: Session = Depends(get_db),
 ):
     """Mark Won prospect as converted and link to a new Client record."""
     prospect = db.query(Prospect).filter(
         Prospect.id == prospect_id,
-        Prospect.advisor_id == advisor_id,
+        Prospect.advisor_id == current_advisor.id,
     ).first()
     if not prospect:
         raise HTTPException(status_code=404, detail="Prospect not found")
@@ -134,7 +129,7 @@ def convert_to_client(
         segment="Retail",
         risk_score=5,
         risk_category="Moderate",
-        advisor_id=advisor_id,
+        advisor_id=current_advisor.id,
         source="prospect",
     )
     db.add(client)
@@ -150,13 +145,13 @@ def convert_to_client(
 @router.delete("/{prospect_id}", status_code=204)
 def delete_prospect(
     prospect_id: int,
-    advisor_id: int = Depends(_get_advisor_id),
+    current_advisor=Depends(get_current_advisor_user),
     db: Session = Depends(get_db),
 ):
     from fastapi.responses import Response
     prospect = db.query(Prospect).filter(
         Prospect.id == prospect_id,
-        Prospect.advisor_id == advisor_id,
+        Prospect.advisor_id == current_advisor.id,
     ).first()
     if not prospect:
         raise HTTPException(status_code=404, detail="Prospect not found")

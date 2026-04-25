@@ -12,6 +12,7 @@ from typing import Optional
 
 from ..database import get_db
 from ..models import Invitation, Advisor
+from ..auth import get_current_advisor_user
 
 router = APIRouter(prefix="/invites", tags=["invites"])
 
@@ -19,12 +20,6 @@ router = APIRouter(prefix="/invites", tags=["invites"])
 class InviteRequest(BaseModel):
     client_email: EmailStr
     client_name: Optional[str] = None
-
-
-def _get_advisor_id(x_advisor_id: Optional[int] = Header(default=None)) -> int:
-    if x_advisor_id is None:
-        raise HTTPException(status_code=401, detail="X-Advisor-Id header required")
-    return x_advisor_id
 
 
 def _build_email_html(advisor_name: str, client_name: str, invite_link: str) -> str:
@@ -79,16 +74,14 @@ async def _send_invite_email(to_email: str, to_name: str, advisor_name: str, inv
 async def send_invite(
     payload: InviteRequest,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
+    current_advisor=Depends(get_current_advisor_user),
 ):
-    advisor = db.query(Advisor).filter(Advisor.id == advisor_id).first()
-    if not advisor:
-        raise HTTPException(status_code=404, detail="Advisor not found")
+    advisor = current_advisor
 
     token = str(uuid.uuid4())
     expires_at = datetime.utcnow() + timedelta(days=7)
     invitation = Invitation(
-        advisor_id=advisor_id,
+        advisor_id=current_advisor.id,
         client_email=payload.client_email,
         token=token,
         expires_at=expires_at,
@@ -112,9 +105,9 @@ async def send_invite(
 @router.get("")
 def list_invites(
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
+    current_advisor=Depends(get_current_advisor_user),
 ):
-    invites = db.query(Invitation).filter(Invitation.advisor_id == advisor_id).order_by(Invitation.created_at.desc()).limit(50).all()
+    invites = db.query(Invitation).filter(Invitation.advisor_id == current_advisor.id).order_by(Invitation.created_at.desc()).limit(50).all()
     return [
         {
             "id": i.id,

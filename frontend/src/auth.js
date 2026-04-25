@@ -4,54 +4,38 @@ const ADVISOR_KEY = 'aria_advisor_session'
 const CLIENT_KEY  = 'aria_client_session'
 
 // ─── Advisor ─────────────────────────────────────────────────────────────────
-// V1: validates against backend advisors table (bcrypt).
-// Falls back to hardcoded map if backend is unavailable (demo resilience).
-
-const ADVISOR_FALLBACK = {
-  'rm_demo':     { password: 'aria2026', role: 'advisor',    advisor_id: 1, displayName: 'Rahul',       city: 'Hyderabad', region: 'Telangana', referral_code: 'RAHUL01' },
-  'hamza':       { password: 'aria2026', role: 'advisor',    advisor_id: 2, displayName: 'Hamza',       city: 'Lyari',     region: 'Karachi',   referral_code: 'HAMZA01' },
-  'sunny_hayes': { password: 'aria2026', role: 'superadmin', advisor_id: 3, displayName: 'Sunny Hayes', city: 'Hyderabad', region: 'Telangana', referral_code: 'SUNNY01' },
-}
 
 export const advisorLogin = async (username, password) => {
-  // Try backend first
   try {
     const api = getApiClient()
+    // Response shape: { access_token, token_type, advisor: { id, username, display_name, role, ... } }
+    // Cookie is set server-side (httpOnly) — we only store display profile in localStorage
     const { data } = await api.post('/advisor/login', { username, password })
+    const a = data.advisor
     const session = {
-      username: data.username,
-      role: data.role,
-      displayName: data.display_name,
-      city: data.city,
-      region: data.region,
-      referral_code: data.referral_code,
-      advisor_id: data.id,
+      username: a.username,
+      role: a.role,
+      displayName: a.display_name,
+      city: a.city,
+      region: a.region,
+      referral_code: a.referral_code,
+      advisor_id: a.id,
     }
     localStorage.setItem(ADVISOR_KEY, JSON.stringify(session))
     return { success: true }
   } catch (err) {
-    // 401 from backend = wrong credentials — do NOT fall back
     if (err?.response?.status === 401) return { success: false, error: 'Invalid username or password.' }
-
-    // Network/cold-start failure — fall back to local map
-    const account = ADVISOR_FALLBACK[username]
-    if (account && account.password === password) {
-      localStorage.setItem(ADVISOR_KEY, JSON.stringify({
-        username,
-        role: account.role,
-        displayName: account.displayName,
-        city: account.city,
-        region: account.region,
-        referral_code: account.referral_code,
-        advisor_id: account.advisor_id,
-      }))
-      return { success: true }
-    }
-    return { success: false, error: 'Invalid username or password.' }
+    return { success: false, error: 'Unable to connect. Please try again.' }
   }
 }
 
-export const advisorLogout = () => localStorage.removeItem(ADVISOR_KEY)
+export const advisorLogout = async () => {
+  try {
+    const api = getApiClient()
+    await api.post('/advisor/logout')
+  } catch {}
+  localStorage.removeItem(ADVISOR_KEY)
+}
 
 export const getAdvisorSession = () => {
   try { return JSON.parse(localStorage.getItem(ADVISOR_KEY)) } catch { return null }

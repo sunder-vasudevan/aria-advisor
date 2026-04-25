@@ -9,21 +9,14 @@ from ..schemas import ClientListItem, Client360, HoldingOut, GoalOut, UrgencyFla
 from ..urgency import compute_urgency, urgency_score
 from ..simulation import monte_carlo_goal_probability, find_required_sip
 from ..seed_holdings import build_default_holdings, DEFAULT_CASH_BALANCE
+from ..auth import get_current_advisor_user
 
 router = APIRouter(prefix="/clients", tags=["clients"])
 
 
-def _get_advisor_id(
-    x_advisor_id: Optional[int] = Header(default=None),
-) -> int:
-    if not x_advisor_id:
-        raise HTTPException(status_code=401, detail="X-Advisor-Id header required")
-    return x_advisor_id
-
-
-def _check_client_access(client, advisor_id: int, x_advisor_role: Optional[str] = None):
+def _check_client_access(client, advisor_id: int, role: Optional[str] = None):
     """Raise 403 if advisor does not own this client. Superadmin bypasses."""
-    if x_advisor_role == "superadmin":
+    if role == "superadmin":
         return
     if client.advisor_id != advisor_id:
         raise HTTPException(status_code=403, detail="Access denied")
@@ -44,13 +37,12 @@ def _kyc_fields(client) -> dict:
 @router.get("", response_model=List[ClientListItem])
 def list_clients(
     db: Session = Depends(get_db),
-    x_advisor_id: Optional[int] = Header(default=None),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
-    # Superadmin sees all clients; advisor sees only their own; no header = all (fallback)
+    # Superadmin sees all clients; advisor sees only their own
     # Archived clients are always excluded from the list view
-    if x_advisor_id and x_advisor_role != "superadmin":
-        clients = db.query(Client).filter(Client.advisor_id == x_advisor_id, Client.is_archived.is_(False)).all()
+    if current_advisor.role != "superadmin":
+        clients = db.query(Client).filter(Client.advisor_id == current_advisor.id, Client.is_archived.is_(False)).all()
     else:
         clients = db.query(Client).filter(Client.is_archived.is_(False)).all()
     result = []
@@ -83,13 +75,12 @@ def list_clients(
 def get_client(
     client_id: int,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
 
     flags = compute_urgency(client, client.portfolio, client.goals, client.life_events, client.interactions)
     return Client360(
@@ -112,7 +103,7 @@ def get_client(
 def create_client(
     payload: ClientCreate,
     db: Session = Depends(get_db),
-    x_advisor_id: Optional[int] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = Client(
         name=payload.name,
@@ -127,7 +118,7 @@ def create_client(
         city=payload.city,
         pincode=payload.pincode,
         pan_number=payload.pan_number,
-        advisor_id=x_advisor_id,  # auto-assign to creating advisor
+        advisor_id=current_advisor.id,  # auto-assign to creating advisor
         lifecycle_stage=payload.lifecycle_stage or "lead",
     )
     db.add(client)
@@ -172,13 +163,12 @@ def update_client(
     client_id: int,
     payload: ClientUpdate,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
 
     update_data = payload.model_dump(exclude_unset=True)
     if "risk_score" in update_data:
@@ -233,13 +223,12 @@ def _enrich_holdings_pnl(holdings):
 def get_holdings(
     client_id: int,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client or not client.portfolio:
         raise HTTPException(status_code=404, detail="Client or portfolio not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     return _enrich_holdings_pnl(client.portfolio.holdings)
 
 
@@ -247,13 +236,12 @@ def get_holdings(
 def get_goals(
     client_id: int,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     return client.goals
 
 
@@ -262,13 +250,12 @@ def create_portfolio(
     client_id: int,
     payload: PortfolioCreate,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
 
     # Remove existing portfolio if present (full replace)
     if client.portfolio:
@@ -335,13 +322,12 @@ def create_goal(
     client_id: int,
     payload: GoalCreate,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
 
     portfolio_value = client.portfolio.total_value if client.portfolio else 0
     sim = monte_carlo_goal_probability(
@@ -371,13 +357,12 @@ def update_goal(
     goal_id: int,
     payload: GoalUpdate,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     goal = db.query(Goal).filter(Goal.id == goal_id, Goal.client_id == client_id).first()
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")
@@ -401,13 +386,12 @@ def delete_goal(
     client_id: int,
     goal_id: int,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     goal = db.query(Goal).filter(Goal.id == goal_id, Goal.client_id == client_id).first()
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")
@@ -421,13 +405,12 @@ def delete_goal(
 def get_life_events(
     client_id: int,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     return db.query(LifeEvent).filter(LifeEvent.client_id == client_id).order_by(LifeEvent.event_date.desc()).all()
 
 
@@ -436,13 +419,12 @@ def create_life_event(
     client_id: int,
     payload: LifeEventCreate,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     event = LifeEvent(client_id=client_id, **payload.dict())
     db.add(event)
     db.commit()
@@ -456,13 +438,12 @@ def update_life_event(
     event_id: int,
     payload: LifeEventUpdate,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     event = db.query(LifeEvent).filter(LifeEvent.id == event_id, LifeEvent.client_id == client_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Life event not found")
@@ -478,13 +459,12 @@ def delete_life_event(
     client_id: int,
     event_id: int,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     event = db.query(LifeEvent).filter(LifeEvent.id == event_id, LifeEvent.client_id == client_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Life event not found")
@@ -502,13 +482,12 @@ def get_goal_projection(
     years_delta: float = Query(default=0, description="Shift in goal timeline in years (e.g. 1 = one year later)"),
     inflation_rate: float = Query(default=0.06, description="Annual inflation rate (e.g. 0.06 = 6%)"),
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     if not client.goals:
         return []
 
@@ -566,14 +545,13 @@ def get_goal_projection(
 def archive_client(
     client_id: int,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     """Soft-archive a client. No hard deletes are permitted."""
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     client.is_archived = True
     db.commit()
     return {"archived": True, "client_id": client_id}
@@ -583,14 +561,13 @@ def archive_client(
 def unarchive_client(
     client_id: int,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     """Restore an archived client."""
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
     client.is_archived = False
     db.commit()
     return {"archived": False, "client_id": client_id}
@@ -600,14 +577,13 @@ def unarchive_client(
 def delink_client(
     client_id: int,
     db: Session = Depends(get_db),
-    x_advisor_id: Optional[int] = Header(default=None),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     """Remove advisor assignment from a client. Client remains in system as unassigned."""
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    if x_advisor_role != "superadmin" and client.advisor_id != x_advisor_id:
+    if current_advisor.role != "superadmin" and client.advisor_id != current_advisor.id:
         raise HTTPException(status_code=403, detail="Not authorised to delink this client")
     client.advisor_id = None
     db.commit()
@@ -644,8 +620,7 @@ def update_lifecycle(
 def get_portfolio_history(
     client_id: int,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor=Depends(get_current_advisor_user),
 ):
     """
     Returns portfolio value over time, derived from settled trades.
@@ -655,7 +630,7 @@ def get_portfolio_history(
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
 
     settled_trades = (
         db.query(Trade)

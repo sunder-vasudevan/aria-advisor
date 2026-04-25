@@ -1,5 +1,6 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
+import os
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 logger = logging.getLogger(__name__)
 from pydantic import BaseModel
@@ -210,7 +211,7 @@ def _link_client_by_name(display_name: str, advisor_id: int, personal_user_id: i
 
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
-def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+def register(payload: RegisterRequest, response: Response, db: Session = Depends(get_db)):
     if len(payload.password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
     existing = db.query(PersonalUser).filter(PersonalUser.email == payload.email.lower()).first()
@@ -256,6 +257,8 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     _create_personal_client_and_portfolio(payload.display_name, user.id, advisor_id, db)
 
     token = create_access_token({"sub": user.email, "user_id": user.id})
+    cookie_secure = os.getenv("COOKIE_SECURE", "true") == "true"
+    response.set_cookie("aria_personal_token", token, httponly=True, secure=cookie_secure, samesite="none", max_age=604800)
     return TokenResponse(
         access_token=token,
         user={
@@ -268,14 +271,22 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     )
 
 
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie("aria_personal_token", samesite="none", secure=True)
+    return {"ok": True}
+
+
 @router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest, db: Session = Depends(get_db)):
+def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
     user = db.query(PersonalUser).filter(PersonalUser.email == payload.email.lower()).first()
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     advisor_id = _get_advisor_id_for_user(user.id, db)
     token = create_access_token({"sub": user.email, "user_id": user.id})
+    cookie_secure = os.getenv("COOKIE_SECURE", "true") == "true"
+    response.set_cookie("aria_personal_token", token, httponly=True, secure=cookie_secure, samesite="none", max_age=604800)
     return TokenResponse(
         access_token=token,
         user={"id": user.id, "email": user.email, "display_name": user.display_name, "advisor_id": advisor_id},

@@ -5,12 +5,13 @@ from typing import Optional
 
 from ..database import get_db
 from ..models import Advisor, Client, Trade, Portfolio
+from ..auth import get_current_advisor_user
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-def _require_superadmin(x_advisor_role: Optional[str] = Header(default=None)):
-    if x_advisor_role != "superadmin":
+def _require_superadmin(current_advisor=Depends(get_current_advisor_user)):
+    if current_advisor.role != "superadmin":
         raise HTTPException(status_code=403, detail="Superadmin access required")
 
 
