@@ -1,17 +1,18 @@
 import os
 from datetime import date
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import anthropic
 
 from ..security_utils import sanitize_ai_response
 
 from ..database import get_db
-from ..models import Client, AuditLog
+from ..models import Client, AuditLog, Advisor
 from ..schemas import CopilotRequest, CopilotResponse
 from ..urgency import compute_urgency
-from .clients import _get_advisor_id, _check_client_access
+from ..auth import get_current_advisor_user
+from .clients import _check_client_access
 
 router = APIRouter(prefix="/clients", tags=["copilot"])
 
@@ -109,13 +110,12 @@ def copilot_chat(
     client_id: int,
     request: CopilotRequest,
     db: Session = Depends(get_db),
-    advisor_id: int = Depends(_get_advisor_id),
-    x_advisor_role: Optional[str] = Header(default=None),
+    current_advisor: Advisor = Depends(get_current_advisor_user),
 ):
     client = db.query(Client).filter(Client.id == client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    _check_client_access(client, advisor_id, x_advisor_role)
+    _check_client_access(client, current_advisor.id, current_advisor.role)
 
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
