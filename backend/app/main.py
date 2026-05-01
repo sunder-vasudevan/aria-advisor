@@ -338,6 +338,30 @@ def _seed_personal_user_assignments():
             print(f"[SEED WARNING] _seed_personal_user_assignments: {e}", flush=True)
 
 
+def _backfill_portfolio_personal_user_id():
+    """Fix portfolios where personal_user_id is NULL but the client row has personal_user_id set.
+
+    This happens when the INSERT portfolio seed aborts mid-transaction (UniqueViolation on
+    portfolios_client_id_key) and the subsequent UPDATE never runs. Safe to call every startup.
+    """
+    with engine.connect() as conn:
+        try:
+            result = conn.execute(text("""
+                UPDATE portfolios p
+                SET personal_user_id = c.personal_user_id
+                FROM clients c
+                WHERE p.client_id = c.id
+                  AND c.personal_user_id IS NOT NULL
+                  AND p.personal_user_id IS NULL
+            """))
+            count = result.rowcount
+            if count > 0:
+                print(f"[BACKFILL] Fixed personal_user_id on {count} portfolio(s)", flush=True)
+            conn.commit()
+        except Exception as e:
+            print(f"[BACKFILL WARNING] _backfill_portfolio_personal_user_id: {e}", flush=True)
+
+
 def _run_migrations():
     """Add new columns to existing tables without losing data."""
     new_columns = [
@@ -611,9 +635,10 @@ async def lifespan(app: FastAPI):
     _seed_advisors()
     _seed_personal_users_to_advisor()      # link test personal users (Ruben, Kate) to Rahul
     _seed_client_advisor_assignments()
-    _migrate_personal_user_scaffolds()  # one-time: link existing personal users to advisors
-    _seed_personal_user_assignments()   # ongoing: ensure all personal users have basic scaffold
-    _backfill_default_holdings()        # backfill any portfolio missing the full 21-instrument set
+    _migrate_personal_user_scaffolds()        # one-time: link existing personal users to advisors
+    _seed_personal_user_assignments()         # ongoing: ensure all personal users have basic scaffold
+    _backfill_portfolio_personal_user_id()    # fix portfolios where personal_user_id was skipped by aborted seed tx
+    _backfill_default_holdings()              # backfill any portfolio missing the full 21-instrument set
     yield
 
 
