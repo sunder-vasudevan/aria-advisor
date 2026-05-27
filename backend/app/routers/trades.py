@@ -158,22 +158,11 @@ def approve_trade(
     trade_id: int,
     approve_data: schemas.TradeApprove,
     db: Session = Depends(get_db),
-    x_personal_user_id: int = Header(None, alias="X-Personal-User-Id"),
+    current_user=Depends(get_current_personal_user),
 ):
-    """
-    Client approves trade (pending_approval → approved → settled).
-
-    - Status: pending_approval → approved
-    - Mock banking: Create debit/credit log
-    - Status: approved → settled (system auto-settles)
-
-    Request headers: X-Personal-User-Id (from JWT token)
-    """
-    if not x_personal_user_id:
-        raise HTTPException(status_code=401, detail="X-Personal-User-Id header required")
-
+    """Client approves trade (pending_approval → approved → settled)."""
     # Resolve client_id from personal user
-    client_id = _get_client_id_for_personal_user(x_personal_user_id, db)
+    client_id = _get_client_id_for_personal_user(current_user.id, db)
     if not client_id:
         raise HTTPException(status_code=404, detail="No client linked to this user")
 
@@ -192,7 +181,7 @@ def approve_trade(
         )
 
     # Balance check before approval
-    portfolio = _get_portfolio_for_personal_user(x_personal_user_id, db)
+    portfolio = _get_portfolio_for_personal_user(current_user.id, db)
     if portfolio:
         if trade.action.value == "buy":
             bal = _check_buy_balance(portfolio, trade.estimated_value)
@@ -302,18 +291,11 @@ def reject_trade(
     trade_id: int,
     reject_data: schemas.TradeReject,
     db: Session = Depends(get_db),
-    x_personal_user_id: int = Header(None, alias="X-Personal-User-Id"),
+    current_user=Depends(get_current_personal_user),
 ):
-    """
-    Client rejects trade (pending_approval → rejected).
-
-    Request headers: X-Personal-User-Id (from JWT token)
-    """
-    if not x_personal_user_id:
-        raise HTTPException(status_code=401, detail="X-Personal-User-Id header required")
-
+    """Client rejects trade (pending_approval → rejected)."""
     # Resolve client_id from personal user
-    client_id = _get_client_id_for_personal_user(x_personal_user_id, db)
+    client_id = _get_client_id_for_personal_user(current_user.id, db)
     if not client_id:
         raise HTTPException(status_code=404, detail="No client linked to this user")
 
@@ -417,18 +399,11 @@ def list_advisor_trades(
 @router.get("/personal/clients/me/trades", response_model=List[schemas.TradeOut])
 def list_personal_trades_jwt(
     db: Session = Depends(get_db),
-    x_personal_user_id: int = Header(None, alias="X-Personal-User-Id"),
+    current_user=Depends(get_current_personal_user),
 ):
-    """
-    Personal app client views their trades using JWT.
-
-    Header: X-Personal-User-Id (from personal JWT)
-    """
-    if not x_personal_user_id:
-        raise HTTPException(status_code=401, detail="X-Personal-User-Id header required")
-
+    """Personal app client views their own trades via Bearer token."""
     # Resolve client_id from personal_user_id
-    client_id = _get_client_id_for_personal_user(x_personal_user_id, db)
+    client_id = _get_client_id_for_personal_user(current_user.id, db)
     if not client_id:
         raise HTTPException(status_code=404, detail="No client linked to this user")
 
@@ -547,16 +522,10 @@ def client_balance_check(
     quantity: float,
     estimated_value: float,
     db: Session = Depends(get_db),
-    x_personal_user_id: int = Header(None, alias="X-Personal-User-Id"),
+    current_user=Depends(get_current_personal_user),
 ):
-    """
-    Pre-approve balance check for client.
-    action=buy  → checks cash_balance >= estimated_value
-    action=sell → checks units_held of asset_code >= quantity
-    """
-    if not x_personal_user_id:
-        raise HTTPException(status_code=401, detail="X-Personal-User-Id header required")
-    portfolio = _get_portfolio_for_personal_user(x_personal_user_id, db)
+    """Pre-approve balance check for client."""
+    portfolio = _get_portfolio_for_personal_user(current_user.id, db)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
 
@@ -574,26 +543,17 @@ def client_balance_check(
 def client_submit_trade(
     trade_data: schemas.ClientTradeCreate,
     db: Session = Depends(get_db),
-    x_personal_user_id: int = Header(None, alias="X-Personal-User-Id"),
+    current_user=Depends(get_current_personal_user),
 ):
-    """
-    Client initiates a trade.
-    - Requires advisor linked (403 if none).
-    - Validates balance: buy → cash_balance; sell → units_held.
-    - Creates trade as settled immediately + notifies advisor.
-    - Deducts cash (buy) or units (sell) from portfolio.
-    """
-    if not x_personal_user_id:
-        raise HTTPException(status_code=401, detail="X-Personal-User-Id header required")
-
-    advisor_id = _get_advisor_id_for_personal_user(x_personal_user_id, db)
+    """Client initiates a trade. Validates balance, creates settled trade, notifies advisor."""
+    advisor_id = _get_advisor_id_for_personal_user(current_user.id, db)
     # No advisor = trade still processes, notification skipped
 
-    client_id = _get_client_id_for_personal_user(x_personal_user_id, db)
+    client_id = _get_client_id_for_personal_user(current_user.id, db)
     if not client_id:
         raise HTTPException(status_code=404, detail="No client record found for this user")
 
-    portfolio = _get_portfolio_for_personal_user(x_personal_user_id, db)
+    portfolio = _get_portfolio_for_personal_user(current_user.id, db)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
 
